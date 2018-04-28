@@ -1,3 +1,4 @@
+/// <reference no-default-lib="true"/>
 /**
  * Adafruit Seesaw, ported from Circuit Python implemenetation.
  */
@@ -75,7 +76,7 @@ namespace seesaw {
             pause(500)
             const chip_id = this.read8(_STATUS_BASE, _STATUS_HW_ID)
             if (chip_id != _HW_ID_CODE) {
-                control.fail("Seesaw hardware ID returned ({:x}) is not correct! Expected {:x}. Please check your wiring.".format(chip_id, _HW_ID_CODE))
+                control.fail(`Seesaw hardware ID returned (${chip_id}) is not correct! Expected ${_HW_ID_CODE}. Please check your wiring.`);
             }
 
         }
@@ -83,13 +84,13 @@ namespace seesaw {
         public options(): number {
             const buf = pins.createBuffer(4)
             this.read(_STATUS_BASE, _STATUS_OPTIONS, buf, 4)
-            return buf.readUInt32LE(0);
+            return buf.getNumber(NumberFormat.UInt32LE, 0);
         }
 
         public version(): number {
             const buf = pins.createBuffer(4)
             this.read(_STATUS_BASE, _STATUS_VERSION, buf, 4);
-            return buf.readUInt32LE(0);
+            return buf.getNumber(NumberFormat.UInt32LE, 0);
         }
 
         public pinMode(pin: number, mode: number) {
@@ -221,24 +222,21 @@ namespace seesaw {
         public read(reg_base: number, reg: number, buf: Buffer, delay: number = 0.001) {
             this.write(reg_base, reg)
             pause(delay * 1000)
-            {
-                const i2c = this.device.begin()
-                i2c.readInto(buf)
-                i2c.end()
-            }
+            this.device.begin()
+            this.device.readInto(buf)
+            this.device.end();
         }
 
         public write(reg_base: number, reg: number, buf: Buffer = null) {
-            const full_buffer = pins.createBufferFromArray([reg_base, reg])
-            if (buf !== null) {
-                full_buffer += buf
-            }
-
-            {
-                const i2c = this.device.begin()
-                i2c.write(full_buffer)
-                i2c.end()
-            }
+            const n = 2 + (buf ? buf.length : 0);
+            const full_buffer = pins.createBuffer(n);
+            full_buffer.setNumber(NumberFormat.UInt8LE, 0, reg_base);
+            full_buffer.setNumber(NumberFormat.UInt8LE, 1, reg);
+            if (buf)
+                full_buffer.write(2, buf);
+            this.device.begin()
+            this.device.write(full_buffer)
+            this.device.end()
         }
     }
 }
