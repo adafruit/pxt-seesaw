@@ -1,5 +1,9 @@
 const dev = new seesaw.Seesaw();
 
-dev.digitalWrite(1, 1);
-pause(100)
-dev.digitalWrite(1, 0);
+// blinky
+forever(() => {
+    dev.digitalWrite(13, 1);
+    pause(500)
+    dev.digitalWrite(13, 0);
+    pause(500)    
+})
