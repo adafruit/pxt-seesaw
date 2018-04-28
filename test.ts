@@ -1,1 +1,5 @@
-// tests go here; this will not be compiled when this package is used as a library
+const dev = new seesaw.Seesaw();
+
+dev.digitalWrite(1, 1);
+pause(100)
+dev.digitalWrite(1, 0);
