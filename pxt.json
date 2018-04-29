@@ -1,6 +1,6 @@
 {
     "name": "seesaw",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "A MakeCode package for Adafruit Seesaw I2C protocol",
     "license": "MIT",
     "dependencies": {
