@@ -4,12 +4,20 @@ A MakeCode package for [Adafruit Seesaw I2C protocol](https://learn.adafruit.com
 
 ## Usage
 
+* Go to **Advanced**, **Extensions** and search for **seesaw**, then add it to your project.
+
 Create a ``seesaw.Seesaw`` object and call the various interfaces. 
 Optionally, pass the i2c device address in the constructor.
 
+Here is the famous ``blinky`` example.
 ```typescript
 const dev = new seesaw.Seesaw();
-dev.digitalWrite(1, 1);
+forever(() => {
+    dev.digitalWrite(13, 1);
+    pause(500)
+    dev.digitalWrite(13, 0);
+    pause(500)    
+})
 ```
 
 ## Building
