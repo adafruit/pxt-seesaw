@@ -3,7 +3,7 @@ node_js:
     - "8.9.4"
 script:
     - "npm install -g pxt"
-    - "pxt target codal"
+    - "pxt target maker"
     - "pxt install"
     - "pxt build"
 sudo: false
