@@ -1,4 +1,4 @@
-# seesaw (Beta)
+# seesaw (Beta) [![Build Status](https://travis-ci.org/adafruit/pxt-seesaw.svg?branch=master)](https://travis-ci.org/adafruit/pxt-seesaw)
 
 A MakeCode package for [Adafruit Seesaw I2C protocol](https://learn.adafruit.com/adafruit-seesaw-atsamd09-breakout?view=all).
 
