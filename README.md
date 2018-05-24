@@ -12,10 +12,11 @@ Optionally, pass the i2c device address in the constructor.
 Here is the famous ``blinky`` example.
 ```typescript
 const dev = new seesaw.Seesaw();
+dev.pinMode(15, 1);
 forever(() => {
-    dev.digitalWrite(13, 1);
+    dev.digitalWrite(15, true);
     pause(500)
-    dev.digitalWrite(13, 0);
+    dev.digitalWrite(15, false);
     pause(500)    
 })
 ```
