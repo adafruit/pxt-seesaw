@@ -350,7 +350,7 @@ Implementation Notes
         }
         
         public read(reg_base: number, reg: number, buf: Buffer, delay: number = 0.001) {
-            this.write(reg_base, reg)
+            this.write(reg_base, reg, pins.createBufferFromArray([]))
             if (this._drdy !== null) {
                 while (this._drdy.digitalRead() === false) {
                     ;
@@ -367,9 +367,11 @@ Implementation Notes
         }
         
         public write(reg_base: number, reg: number, buf: Buffer = null) {
-            let full_buffer = pins.createBufferFromArray([reg_base, reg])
-            if (buf !== null) {
-                full_buffer.write(2, buf)
+            let cmds = pins.createBufferFromArray([reg_base, reg])
+            let fullBuf = pins.createBuffer(2 + buf.length)
+            fullBuf.write(0, cmds)
+            if (buf != null) {
+                fullBuf.write(2, buf)
             }
             
             if (this._drdy !== null) {
@@ -380,7 +382,7 @@ Implementation Notes
             
             {
                 const i2c = this.i2c_device.begin()
-                i2c.write(full_buffer)
+                i2c.write(fullBuf)
                 i2c.end()
             }
         }
