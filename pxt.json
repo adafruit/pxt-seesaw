@@ -8,13 +8,23 @@
     },
     "files": [
         "README.md",
-        "seesaw.ts"
+        "seesaw.ts",
+		"analoginput.ts",
+		"crickit.ts",
+		"digitalio.ts",
+		"pwmout.ts",
+		"samd09.ts"
     ],
     "testFiles": [
         "test.ts"
     ],
-    "testDependencies": {
-        "circuit-playground": "*"
+    "public": false,
+    "targetVersions": {
+        "branch": "v1.1.19",
+        "tag": "v1.1.19",
+        "commits": "https://github.com/Microsoft/pxt-adafruit/commits/61138a01d01d193db5307a35552cab6305c390ab",
+        "target": "1.1.19",
+        "pxt": "3.15.6"
     },
-    "public": true
+    "installedVersion": "github:adafruit/pxt-seesaw#v0.0.3"
 }

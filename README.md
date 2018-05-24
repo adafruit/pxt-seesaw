@@ -51,12 +51,6 @@ pxt
 
 To create a new release, run ``pxt bump`` from the project folder. Use ``semver`` logic to device if you need to bump major, minor etc... The editor will automatically pick the latest release in the repo.
 
-## Regeneration
-
-The implementation of this package is primarly based on
-running [pyconv](https://makecode.com/cli/pyconv) over https://github.com/adafruit/Adafruit_CircuitPython_seesaw/. 
-After conversion is done, naming conventions have to be reconciled; and potentially a few build breaks.
-
 ## License
 
 MIT
