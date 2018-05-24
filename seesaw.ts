@@ -294,6 +294,7 @@ Implementation Notes
         public analogWrite(pin: number, value: number) {
             let pin_found = false
             let cmd = pins.createBuffer(3)
+
             if (this.pinMapping.pwmWidth == 16) {
                 if (this.pinMapping.pwmPins.indexOf(pin) >= 0) {
                     pin_found = true
@@ -366,13 +367,11 @@ Implementation Notes
             }
         }
         
-        public write(reg_base: number, reg: number, buf: Buffer = null) {
+        public write(reg_base: number, reg: number, buf: Buffer) {
             let cmds = pins.createBufferFromArray([reg_base, reg])
             let fullBuf = pins.createBuffer(2 + buf.length)
             fullBuf.write(0, cmds)
-            if (buf != null) {
-                fullBuf.write(2, buf)
-            }
+            fullBuf.write(2, buf)
             
             if (this._drdy !== null) {
                 while (this._drdy.digitalRead() === false) {

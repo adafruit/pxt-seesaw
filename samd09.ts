@@ -29,11 +29,10 @@ namespace seesaw {
     const _PWM_1_PIN = 0x05
     const _PWM_2_PIN = 0x06
     const _PWM_3_PIN = 0x07
-    class SAMD09Pinmap extends SeesawPinmap {
-        static analogPins = [_ADC_INPUT_0_PIN, _ADC_INPUT_1_PIN, _ADC_INPUT_2_PIN, _ADC_INPUT_3_PIN]
-        static pwmWidth = 8
-        static pwmPins = [_PWM_0_PIN, _PWM_1_PIN, _PWM_2_PIN, _PWM_3_PIN]
-        static touchPins: number[] = []
-    }
-    export const samd09Pinmap = new SAMD09Pinmap()
+
+    export const samd09Pinmap = new SeesawPinmap()
+    samd09Pinmap.analogPins = [_ADC_INPUT_0_PIN, _ADC_INPUT_1_PIN, _ADC_INPUT_2_PIN, _ADC_INPUT_3_PIN]
+    samd09Pinmap.pwmWidth = 8
+    samd09Pinmap.pwmPins = [_PWM_0_PIN, _PWM_1_PIN, _PWM_2_PIN, _PWM_3_PIN]
+    samd09Pinmap.touchPins = []
 }
