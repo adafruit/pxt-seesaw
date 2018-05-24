@@ -9,11 +9,11 @@
     "files": [
         "README.md",
         "seesaw.ts",
-		"analoginput.ts",
-		"crickit.ts",
-		"digitalio.ts",
-		"pwmout.ts",
-		"samd09.ts"
+        "analoginput.ts",
+        "crickit.ts",
+        "digitalio.ts",
+        "pwmout.ts",
+        "samd09.ts"
     ],
     "testFiles": [
         "test.ts"

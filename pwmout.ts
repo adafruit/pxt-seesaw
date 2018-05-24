@@ -2,7 +2,7 @@
 // *** adafruit_seesaw/adafruit_seesaw/pwmout.py ***
 //
 
-namespace pwmout {
+namespace seesaw {
     // The MIT License (MIT)
     // Copyright (c) 2017 Dean Miller for Adafruit Industries
     // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,9 +20,7 @@ namespace pwmout {
     // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     // THE SOFTWARE.
-    // pylint: disable=missing-docstring,invalid-name,too-many-public-methods,too-few-public-methods
-    let __version__ = "0.0.0-auto.0"
-    let __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_seesaw.git"
+
     export class PWMOut {
         _seesaw: Seesaw;
         _pin: int8;
@@ -42,7 +40,7 @@ namespace pwmout {
         }
         
         set frequency(frequency: number) {
-            this._seesaw.set_pwm_freq(this._pin, frequency)
+            this._seesaw.setPwmFreq(this._pin, frequency)
             this._frequency = frequency
         }
         
@@ -58,7 +56,7 @@ namespace pwmout {
                 control.fail("Out of range")
             }
             
-            this._seesaw.analog_write(this._pin, value)
+            this._seesaw.analogWrite(this._pin, value)
             this._dc = value
         }
         

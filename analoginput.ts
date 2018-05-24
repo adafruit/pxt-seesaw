@@ -2,7 +2,7 @@
 // *** adafruit_seesaw/adafruit_seesaw/analoginput.py ***
 //
 
-namespace analoginput {
+namespace seesaw {
     // The MIT License (MIT)
     // Copyright (c) 2017 Dean Miller for Adafruit Industries
     // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,9 +20,6 @@ namespace analoginput {
     // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     // THE SOFTWARE.
-    // pylint: disable=missing-docstring,invalid-name,too-many-public-methods
-    let __version__ = "0.0.0-auto.0"
-    let __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_seesaw.git"
     export class AnalogInput {
         _seesaw: Seesaw;
         _pin: int8;
@@ -36,10 +33,10 @@ namespace analoginput {
         }
         
         get value(): uint16 {
-            return this._seesaw.analog_read(this._pin)
+            return this._seesaw.analogRead(this._pin)
         }
         
-        get reference_voltage(): number {
+        get referenceVoltage(): number {
             return 3.3
         }
         

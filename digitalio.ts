@@ -2,7 +2,7 @@
 // *** adafruit_seesaw/adafruit_seesaw/digitalio.py ***
 //
 
-namespace digitalio {
+namespace seesaw {
     // The MIT License (MIT)
     // Copyright (c) 2017 Dean Miller for Adafruit Industries
     // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,9 +20,6 @@ namespace digitalio {
     // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     // THE SOFTWARE.
-    // pylint: disable=missing-docstring,invalid-name,too-many-public-methods
-    let __version__ = "0.0.0-auto.0"
-    let __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_seesaw.git"
 
     declare const enum DriveMode {
         PUSH_PULL = 1
@@ -40,12 +37,12 @@ namespace digitalio {
 
     export class DigitalIO {
         _seesaw: Seesaw;
-        _pin: int8;
+        _pin: number;
         _drive_mode: DriveMode;
         _direction: Direction
-        _pull: uint8;
+        _pull: number;
         _value: boolean
-        constructor(seesaw: Seesaw, pin: int8) {
+        constructor(seesaw: Seesaw, pin: number) {
             this._seesaw = seesaw
             this._pin = pin
             this._drive_mode = DriveMode.PUSH_PULL
@@ -58,20 +55,20 @@ namespace digitalio {
             ;
         }
         
-        public switch_to_output(value: boolean = false, drive_mode: DriveMode = DriveMode.PUSH_PULL) {
-            this._seesaw.pin_mode(this._pin, this._seesaw.OUTPUT)
-            this._seesaw.digital_write(this._pin, value)
+        public switchToOutput(value: boolean = false, drive_mode: DriveMode = DriveMode.PUSH_PULL) {
+            this._seesaw.pinMode(this._pin, Seesaw.OUTPUT)
+            this._seesaw.digitalWrite(this._pin, value)
             this._drive_mode = drive_mode
             this._pull = null
         }
         
-        public switch_to_input(pull: Pull = null) {
+        public switchToInput(pull: Pull = null) {
             if (pull == Pull.DOWN) {
                 control.fail("Pull Down currently not supported")
             } else if (pull == Pull.UP) {
-                this._seesaw.pin_mode(this._pin, this._seesaw.INPUT_PULLUP)
+                this._seesaw.pinMode(this._pin, Seesaw.INPUT_PULLUP)
             } else {
-                this._seesaw.pin_mode(this._pin, this._seesaw.INPUT)
+                this._seesaw.pinMode(this._pin, Seesaw.INPUT)
             }
             
             this._pull = pull
@@ -83,9 +80,9 @@ namespace digitalio {
         
         set direction(value: Direction) {
             if (value == Direction.OUTPUT) {
-                this.switch_to_output()
+                this.switchToOutput()
             } else if (value == Direction.INPUT) {
-                this.switch_to_input()
+                this.switchToInput()
             } else {
                 control.fail("Out of range")
             }
@@ -98,35 +95,35 @@ namespace digitalio {
                 return this._value
             }
             
-            return this._seesaw.digital_read(this._pin)
+            return this._seesaw.digitalRead(this._pin)
         }
         
         set value(val: boolean) {
-            this._seesaw.digital_write(this._pin, val)
+            this._seesaw.digitalWrite(this._pin, val)
             this._value = val
         }
         
-        get drive_mode(): uint8 {
+        get drive_mode(): number {
             return this._drive_mode
         }
         
-        set drive_mode(mode: uint8) {
+        set drive_mode(mode: number) {
             ;
         }
         
-        get pull(): uint8 {
+        get pull(): number {
             return this._pull
         }
         
-        set pull(mode: uint8) {
+        set pull(mode: number) {
             if (this._direction == Direction.OUTPUT) {
                 control.fail("cannot set pull on an output pin")
             } else if (mode == Pull.DOWN) {
                 control.fail("Pull Down currently not supported")
             } else if (mode == Pull.UP) {
-                this._seesaw.pin_mode(this._pin, this._seesaw.INPUT_PULLUP)
+                this._seesaw.pinMode(this._pin, Seesaw.INPUT_PULLUP)
             } else if (mode === null) {
-                this._seesaw.pin_mode(this._pin, this._seesaw.INPUT)
+                this._seesaw.pinMode(this._pin, Seesaw.INPUT)
             } else {
                 control.fail("Out of range")
             }

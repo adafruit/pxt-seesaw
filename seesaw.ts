@@ -43,16 +43,6 @@ Implementation Notes
 * Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
 
  */
-    // This code needs to be broken up into analogio, busio, digitalio, and pulseio
-    // compatible classes so we won't bother with some lints until then.
-    // pylint: disable=missing-docstring,invalid-name,too-many-public-methods,no-name-in-module
-    try {
-    }
-    catch (_/* instanceof ImportError */) {
-    }
-    
-    let __version__ = "0.0.0-auto.0"
-    let __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_seesaw.git"
     const _STATUS_BASE = 0x00
     const _GPIO_BASE = 0x01
     const _SERCOM0_BASE = 0x02
@@ -104,10 +94,18 @@ Implementation Notes
     const _EEPROM_I2C_ADDR = 0x3F
     // TODO: update when we get real PID
     const _CRICKIT_PID = 9999
+
+    export class SeesawPinmap{
+        analogPins: number[]
+        pwmWidth: number
+        pwmPins: number[]
+        touchPins: number[]
+    }
+
     export class Seesaw {
-        _drdy: int8;
+        _drdy: DigitalPin;
         private i2c_device: pins.I2CDevice;
-        pin_mapping: Seesaw_Pinmap;
+        pinMapping: SeesawPinmap;
         /** Driver for Seesaw i2c generic conversion trip
 
        :param ~busio.I2C i2c_bus: Bus the SeeSaw is connected to
@@ -118,11 +116,8 @@ Implementation Notes
         static INPUT_PULLUP = 0x02
         static INPUT_PULLDOWN = 0x03
 
-        constructor(addr: number = 0x49, drdy: int8 = -1) {
+        constructor(addr: number = 0x49, drdy: DigitalPin = null) {
             this._drdy = drdy
-            if (drdy != -1) {
-                drdy.switch_to_input()
-            }
 
             this.i2c_device = new pins.I2CDevice(addr)
             this.softwareReset()
@@ -137,56 +132,56 @@ Implementation Notes
                 control.fail(`Seesaw hardware ID returned (${chip_id}) is not correct! Expected ${_HW_ID_CODE}. Please check your wiring.`)
             }
             
-            let pid = this.get_version() >> 16
+            let pid = this.getVersion() >> 16
             if (pid == _CRICKIT_PID) {
-                this.pin_mapping = adafruit_seesaw.crickit.Crickit_Pinmap
+                this.pinMapping = CrickitPinmap
             } else {
-                this.pin_mapping = adafruit_seesaw.samd09.SAMD09_Pinmap
+                this.pinMapping = SAMD09Pinmap
             }
             
         }
         
-        public get_options(): number {
+        public getOptions(): number {
             let buf = pins.createBuffer(4)
             this.read(_STATUS_BASE, _STATUS_OPTIONS, buf)
             let ret = pins.unpackBuffer(">I", buf)[0]
             return ret
         }
         
-        public get_version(): number {
+        public getVersion(): number {
             let buf = pins.createBuffer(4)
             this.read(_STATUS_BASE, _STATUS_VERSION, buf)
             let ret = pins.unpackBuffer(">I", buf)[0]
             return ret
         }
         
-        public pin_mode(pin: number, mode: number) {
+        public pinMode(pin: number, mode: number) {
             if (pin >= 32) {
-                this.pin_mode_bulk_b(1 << pin - 32, mode)
+                this.pinModeBulkB(1 << pin - 32, mode)
             } else {
-                this.pin_mode_bulk(1 << pin, mode)
+                this.pinModeBulk(1 << pin, mode)
             }
             
         }
         
-        public digital_write(pin: number, value: number) {
+        public digitalWrite(pin: number, value: boolean) {
             if (pin >= 32) {
-                this.digital_write_bulk_b(1 << pin - 32, value)
+                this.digitalWriteBulkB(1 << pin - 32, value)
             } else {
-                this.digital_write_bulk(1 << pin, value)
+                this.digitalWriteBulk(1 << pin, value)
             }
             
         }
         
-        public digital_read(pin: number): boolean {
+        public digitalRead(pin: number): boolean {
             if (pin >= 32) {
-                return this.digital_read_bulk_b(1 << pin - 32) != 0
+                return this.digitalReadBulkB(1 << pin - 32) != 0
             }
             
-            return this.digital_read_bulk(1 << pin) != 0
+            return this.digitalReadBulk(1 << pin) != 0
         }
         
-        public digital_read_bulk(pinSet: number): number {
+        public digitalReadBulk(pinSet: number): number {
             let buf = pins.createBuffer(4)
             this.read(_GPIO_BASE, _GPIO_BULK, buf)
             buf[0] = buf[0] & 0x3F
@@ -194,15 +189,15 @@ Implementation Notes
             return ret & pinSet
         }
         
-        public digital_read_bulk_b(pinSet: number): number {
+        public digitalReadBulkB(pinSet: number): number {
             let buf = pins.createBuffer(8)
             this.read(_GPIO_BASE, _GPIO_BULK, buf)
             let ret = pins.unpackBuffer(">I", buf.slice(4))[0]
             return ret & pinSet
         }
         
-        public set_GPIO_interrupts(pinSet: number, enabled: boolean) {
-            let cmd = pins.packBuffer(">I", pinSet)
+        public setGPIOInterrupts(pinSet: number, enabled: boolean) {
+            let cmd = pins.packBuffer(">I", [pinSet])
             if (enabled) {
                 this.write(_GPIO_BASE, _GPIO_INTENSET, cmd)
             } else {
@@ -211,31 +206,31 @@ Implementation Notes
             
         }
         
-        public analog_read(pin: number): number {
+        public analogRead(pin: number): number {
             let buf = pins.createBuffer(2)
-            if (this.pin_mapping.analog_pins.indexOf(pin) < 0) {
+            if (this.pinMapping.analogPins.indexOf(pin) < 0) {
                 control.fail("Invalid ADC pin")
             }
             
-            this.read(_ADC_BASE, _ADC_CHANNEL_OFFSET + this.pin_mapping.analog_pins.index(pin), buf)
+            this.read(_ADC_BASE, _ADC_CHANNEL_OFFSET + this.pinMapping.analogPins.indexOf(pin), buf)
             let ret = pins.unpackBuffer(">H", buf)[0]
             pause(1)
             return ret
         }
         
-        public touch_read(pin: number): number {
+        public touchRead(pin: number): number {
             let buf = pins.createBuffer(2)
-            if (this.pin_mapping.touch_pins.indexOf(pin) < 0) {
+            if (this.pinMapping.touchPins.indexOf(pin) < 0) {
                 control.fail("Invalid touch pin")
             }
             
-            this.read(_TOUCH_BASE, _TOUCH_CHANNEL_OFFSET + this.pin_mapping.touch_pins.index(pin), buf)
+            this.read(_TOUCH_BASE, _TOUCH_CHANNEL_OFFSET + this.pinMapping.touchPins.indexOf(pin), buf)
             let ret = pins.unpackBuffer(">H", buf)[0]
             return ret
         }
         
-        public pin_mode_bulk(pinSet: number, mode: number) {
-            let cmd = pins.packBuffer(">I", pinSet)
+        public pinModeBulk(pinSet: number, mode: number) {
+            let cmd = pins.packBuffer(">I", [pinSet])
             if (mode == Seesaw.OUTPUT) {
                 this.write(_GPIO_BASE, _GPIO_DIRSET_BULK, cmd)
             } else if (mode == Seesaw.INPUT) {
@@ -254,9 +249,9 @@ Implementation Notes
             
         }
         
-        public pin_mode_bulk_b(pinSet: number, mode: number) {
+        public pinModeBulkB(pinSet: number, mode: number) {
             let cmd = pins.createBuffer(8)
-            cmd.slice(4) = pins.packBuffer(">I", pinSet)
+            cmd.write(4, pins.packBuffer(">I", [pinSet]))
             if (mode == Seesaw.OUTPUT) {
                 this.write(_GPIO_BASE, _GPIO_DIRSET_BULK, cmd)
             } else if (mode == Seesaw.INPUT) {
@@ -275,8 +270,8 @@ Implementation Notes
             
         }
         
-        public digital_write_bulk(pinSet: number, value: number) {
-            let cmd = pins.packBuffer(">I", pinSet)
+        public digitalWriteBulk(pinSet: number, value: boolean) {
+            let cmd = pins.packBuffer(">I", [pinSet])
             if (value) {
                 this.write(_GPIO_BASE, _GPIO_BULK_SET, cmd)
             } else {
@@ -285,9 +280,9 @@ Implementation Notes
             
         }
         
-        public digital_write_bulk_b(pinSet: number, value: number) {
+        public digitalWriteBulkB(pinSet: number, value: boolean) {
             let cmd = pins.createBuffer(8)
-            cmd.slice(4) = pins.packBuffer(">I", pinSet)
+            cmd.write(4, pins.packBuffer(">I", [pinSet]))
             if (value) {
                 this.write(_GPIO_BASE, _GPIO_BULK_SET, cmd)
             } else {
@@ -296,17 +291,18 @@ Implementation Notes
             
         }
         
-        public analog_write(pin: number, value: number) {
+        public analogWrite(pin: number, value: number) {
             let pin_found = false
-            if (this.pin_mapping.pwm_width == 16) {
-                if (this.pin_mapping.pwm_pins.indexOf(pin) >= 0) {
+            let cmd = pins.createBuffer(3)
+            if (this.pinMapping.pwmWidth == 16) {
+                if (this.pinMapping.pwmPins.indexOf(pin) >= 0) {
                     pin_found = true
-                    let cmd = pins.createBuffer([this.pin_mapping.pwm_pins.index(pin), value >> 8, value])
+                    cmd = pins.createBufferFromArray([this.pinMapping.pwmPins.indexOf(pin), value >> 8, value])
                 }
                 
-            } else if (this.pin_mapping.pwm_pins.indexOf(pin) >= 0) {
+            } else if (this.pinMapping.pwmPins.indexOf(pin) >= 0) {
                 pin_found = true
-                cmd = pins.createBuffer([this.pin_mapping.pwm_pins.index(pin), value])
+                cmd = pins.createBufferFromArray([this.pinMapping.pwmPins.indexOf(pin), value])
             }
             
             if (pin_found === false) {
@@ -316,9 +312,9 @@ Implementation Notes
             this.write(_TIMER_BASE, _TIMER_PWM, cmd)
         }
         
-        public set_pwm_freq(pin: number, freq: number) {
-            if (this.pin_mapping.pwm_pins.indexOf(pin) >= 0) {
-                let cmd = pins.createBuffer([this.pin_mapping.pwm_pins.index(pin), freq >> 8, freq])
+        public setPwmFreq(pin: number, freq: number) {
+            if (this.pinMapping.pwmPins.indexOf(pin) >= 0) {
+                let cmd = pins.createBufferFromArray([this.pinMapping.pwmPins.indexOf(pin), freq >> 8, freq])
                 this.write(_TIMER_BASE, _TIMER_FREQ, cmd)
             } else {
                 control.fail("Invalid PWM pin")
@@ -326,44 +322,25 @@ Implementation Notes
             
         }
         
-        // def enable_sercom_data_rdy_interrupt(self, sercom):
-        // _sercom_inten.DATA_RDY = 1
-        // self.write8(SEESAW_SERCOM0_BASE + sercom, SEESAW_SERCOM_INTEN, _sercom_inten.get())
-        // def disable_sercom_data_rdy_interrupt(self, sercom):
-        // _sercom_inten.DATA_RDY = 0
-        // self.write8(SEESAW_SERCOM0_BASE + sercom, SEESAW_SERCOM_INTEN, _sercom_inten.get())
-        // def read_sercom_data(self, sercom):
-        // return self.read8(SEESAW_SERCOM0_BASE + sercom, SEESAW_SERCOM_DATA)
-        public set_i2c_addr(addr: number) {
-            this.eeprom_write8(_EEPROM_I2C_ADDR, addr)
-            pause(250)
-            this.i2c_device.device_address = addr
-            this.sw_reset()
+        public eepromWrite8(addr: number, val: number) {
+            this.eepromWrite(addr, pins.createBufferFromArray([val]))
         }
         
-        public get_i2c_addr() {
-            return this.read8(_EEPROM_BASE, _EEPROM_I2C_ADDR)
-        }
-        
-        public eeprom_write8(addr: number, val: number) {
-            this.eeprom_write(addr, pins.createBuffer([val]))
-        }
-        
-        public eeprom_write(addr: number, buf: Buffer) {
+        public eepromWrite(addr: number, buf: Buffer) {
             this.write(_EEPROM_BASE, addr, buf)
         }
         
-        public eeprom_read8(addr: number) {
+        public eepromRead8(addr: number) {
             return this.read8(_EEPROM_BASE, addr)
         }
         
-        public uart_set_baud(baud: number) {
-            let cmd = pins.packBuffer(">I", baud)
+        public uartSetBaud(baud: number) {
+            let cmd = pins.packBuffer(">I", [baud])
             this.write(_SERCOM0_BASE, _SERCOM_BAUD, cmd)
         }
         
         public write8(reg_base: number, reg: number, value: number) {
-            this.write(reg_base, reg, pins.createBuffer([value]))
+            this.write(reg_base, reg, pins.createBufferFromArray([value]))
         }
         
         public read8(reg_base: number, reg: number): number {
@@ -375,7 +352,7 @@ Implementation Notes
         public read(reg_base: number, reg: number, buf: Buffer, delay: number = 0.001) {
             this.write(reg_base, reg)
             if (this._drdy !== null) {
-                while (this._drdy.value === false) {
+                while (this._drdy.digitalRead() === false) {
                     ;
                 }
             } else {
@@ -390,13 +367,13 @@ Implementation Notes
         }
         
         public write(reg_base: number, reg: number, buf: Buffer = null) {
-            let full_buffer = pins.createBuffer([reg_base, reg])
+            let full_buffer = pins.createBufferFromArray([reg_base, reg])
             if (buf !== null) {
-                full_buffer += buf
+                full_buffer.write(2, buf)
             }
             
             if (this._drdy !== null) {
-                while (this._drdy.value === false) {
+                while (this._drdy.digitalRead() === false) {
                     ;
                 }
             }

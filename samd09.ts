@@ -2,7 +2,7 @@
 // *** adafruit_seesaw/adafruit_seesaw/samd09.py ***
 //
 
-namespace samd09 {
+namespace seesaw {
     // The MIT License (MIT)
     // Copyright (c) 2017 Dean Miller for Adafruit Industries
     // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,9 +20,7 @@ namespace samd09 {
     // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     // THE SOFTWARE.
-    // pylint: disable=missing-docstring,invalid-name,too-many-public-methods,too-few-public-methods
-    let __version__ = "0.0.0-auto.0"
-    let __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_seesaw.git"
+
     const _ADC_INPUT_0_PIN = 0x02
     const _ADC_INPUT_1_PIN = 0x03
     const _ADC_INPUT_2_PIN = 0x04
@@ -31,11 +29,11 @@ namespace samd09 {
     const _PWM_1_PIN = 0x05
     const _PWM_2_PIN = 0x06
     const _PWM_3_PIN = 0x07
-    export class SAMD09_Pinmap extends Seesaw_Pinmap {
-        static analog_pins = [_ADC_INPUT_0_PIN, _ADC_INPUT_1_PIN, _ADC_INPUT_2_PIN, _ADC_INPUT_3_PIN]
-        static pwm_width = 8
-        static pwm_pins = [_PWM_0_PIN, _PWM_1_PIN, _PWM_2_PIN, _PWM_3_PIN]
-        static touch_pins = []
+    export class SAMD09Pinmap extends SeesawPinmap {
+        static analogPins = [_ADC_INPUT_0_PIN, _ADC_INPUT_1_PIN, _ADC_INPUT_2_PIN, _ADC_INPUT_3_PIN]
+        static pwmWidth = 8
+        static pwmPins = [_PWM_0_PIN, _PWM_1_PIN, _PWM_2_PIN, _PWM_3_PIN]
+        static touchPins: number[] = []
     }
     
 }

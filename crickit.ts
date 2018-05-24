@@ -2,7 +2,7 @@
 // *** adafruit_seesaw/adafruit_seesaw/crickit.py ***
 //
 
-namespace crickit {
+namespace seesaw {
     // The MIT License (MIT)
     // Copyright (c) 2017 Dean Miller for Adafruit Industries
     // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,9 +20,7 @@ namespace crickit {
     // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     // THE SOFTWARE.
-    // pylint: disable=missing-docstring,invalid-name,too-many-public-methods,too-few-public-methods
-    let __version__ = "0.0.0-auto.0"
-    let __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_seesaw.git"
+
     const _ADC_INPUT_0_PIN_CRICKIT = 2
     const _ADC_INPUT_1_PIN_CRICKIT = 3
     const _ADC_INPUT_2_PIN_CRICKIT = 40
@@ -47,11 +45,11 @@ namespace crickit {
     const _CRICKIT_CT2 = 1
     const _CRICKIT_CT3 = 2
     const _CRICKIT_CT4 = 3
-    export class Crickit_Pinmap extends Seesaw_Pinmap {
-        static analog_pins = [_ADC_INPUT_0_PIN_CRICKIT, _ADC_INPUT_1_PIN_CRICKIT, _ADC_INPUT_2_PIN_CRICKIT, _ADC_INPUT_3_PIN_CRICKIT, _ADC_INPUT_4_PIN_CRICKIT, _ADC_INPUT_5_PIN_CRICKIT, _ADC_INPUT_6_PIN_CRICKIT, _ADC_INPUT_7_PIN_CRICKIT]
-        static pwm_width = 16
-        static pwm_pins = [_CRICKIT_S4, _CRICKIT_S3, _CRICKIT_S2, _CRICKIT_S1, _CRICKIT_M1_A1, _CRICKIT_M1_A2, _CRICKIT_M1_B1, _CRICKIT_M1_B2, _CRICKIT_DRIVE1, _CRICKIT_DRIVE2, _CRICKIT_DRIVE3, _CRICKIT_DRIVE4]
-        static touch_pins = [_CRICKIT_CT1, _CRICKIT_CT2, _CRICKIT_CT3, _CRICKIT_CT4]
+    export class CrickitPinmap extends SeesawPinmap {
+        static analogPins = [_ADC_INPUT_0_PIN_CRICKIT, _ADC_INPUT_1_PIN_CRICKIT, _ADC_INPUT_2_PIN_CRICKIT, _ADC_INPUT_3_PIN_CRICKIT, _ADC_INPUT_4_PIN_CRICKIT, _ADC_INPUT_5_PIN_CRICKIT, _ADC_INPUT_6_PIN_CRICKIT, _ADC_INPUT_7_PIN_CRICKIT]
+        static pwmWidth = 16
+        static pwmPins = [_CRICKIT_S4, _CRICKIT_S3, _CRICKIT_S2, _CRICKIT_S1, _CRICKIT_M1_A1, _CRICKIT_M1_A2, _CRICKIT_M1_B1, _CRICKIT_M1_B2, _CRICKIT_DRIVE1, _CRICKIT_DRIVE2, _CRICKIT_DRIVE3, _CRICKIT_DRIVE4]
+        static touchPins = [_CRICKIT_CT1, _CRICKIT_CT2, _CRICKIT_CT3, _CRICKIT_CT4]
     }
     
 }
