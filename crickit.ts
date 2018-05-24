@@ -45,11 +45,11 @@ namespace seesaw {
     const _CRICKIT_CT2 = 1
     const _CRICKIT_CT3 = 2
     const _CRICKIT_CT4 = 3
-    export class CrickitPinmap extends SeesawPinmap {
+    class CrickitPinmap extends SeesawPinmap {
         static analogPins = [_ADC_INPUT_0_PIN_CRICKIT, _ADC_INPUT_1_PIN_CRICKIT, _ADC_INPUT_2_PIN_CRICKIT, _ADC_INPUT_3_PIN_CRICKIT, _ADC_INPUT_4_PIN_CRICKIT, _ADC_INPUT_5_PIN_CRICKIT, _ADC_INPUT_6_PIN_CRICKIT, _ADC_INPUT_7_PIN_CRICKIT]
         static pwmWidth = 16
         static pwmPins = [_CRICKIT_S4, _CRICKIT_S3, _CRICKIT_S2, _CRICKIT_S1, _CRICKIT_M1_A1, _CRICKIT_M1_A2, _CRICKIT_M1_B1, _CRICKIT_M1_B2, _CRICKIT_DRIVE1, _CRICKIT_DRIVE2, _CRICKIT_DRIVE3, _CRICKIT_DRIVE4]
         static touchPins = [_CRICKIT_CT1, _CRICKIT_CT2, _CRICKIT_CT3, _CRICKIT_CT4]
     }
-    
+    export const crickitPinmap = new CrickitPinmap()
 }

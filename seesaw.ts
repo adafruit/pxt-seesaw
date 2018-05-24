@@ -134,9 +134,9 @@ Implementation Notes
             
             let pid = this.getVersion() >> 16
             if (pid == _CRICKIT_PID) {
-                this.pinMapping = CrickitPinmap
+                this.pinMapping = crickitPinmap
             } else {
-                this.pinMapping = SAMD09Pinmap
+                this.pinMapping = samd09Pinmap
             }
             
         }
