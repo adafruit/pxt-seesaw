@@ -93,7 +93,7 @@ Implementation Notes
     const _HW_ID_CODE = 0x55
     const _EEPROM_I2C_ADDR = 0x3F
     // TODO: update when we get real PID
-    const _CRICKIT_PID = 3093
+    const _CRICKIT_PID = 9999
 
     export class SeesawPinmap{
         analogPins: number[]
