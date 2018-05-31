@@ -8,9 +8,7 @@
     },
     "files": [
         "README.md",
-        "seesaw.ts",
-        "crickit.ts",
-        "samd09.ts"
+        "seesaw.ts"
     ],
     "testFiles": [
         "test.ts"

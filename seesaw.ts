@@ -92,8 +92,6 @@ Implementation Notes
     const _TOUCH_CHANNEL_OFFSET = 0x10
     const _HW_ID_CODE = 0x55
     const _EEPROM_I2C_ADDR = 0x3F
-    // TODO: update when we get real PID
-    const _CRICKIT_PID = 9999
 
     export class SeesawPinmap{
         analogPins: number[]
@@ -116,9 +114,9 @@ Implementation Notes
         static INPUT_PULLUP = 0x02
         static INPUT_PULLDOWN = 0x03
 
-        constructor(addr: number = 0x49, drdy: DigitalPin = null) {
+        constructor(pinmap: SeesawPinmap, addr: number = 0x49, drdy: DigitalPin = null) {
             this._drdy = drdy
-
+            this.pinMapping = pinmap
             this.i2c_device = new pins.I2CDevice(addr)
             this.softwareReset()
         }
@@ -131,14 +129,6 @@ Implementation Notes
             if (chip_id != _HW_ID_CODE) {
                 control.fail(`Seesaw hardware ID returned (${chip_id}) is not correct! Expected ${_HW_ID_CODE}. Please check your wiring.`)
             }
-            
-            let pid = this.getVersion() >> 16
-            if (pid == _CRICKIT_PID) {
-                this.pinMapping = crickitPinmap
-            } else {
-                this.pinMapping = samd09Pinmap
-            }
-            
         }
         
         public getOptions(): number {

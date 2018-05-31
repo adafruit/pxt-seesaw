@@ -1,4 +1,4 @@
-const dev = new seesaw.Seesaw()
+const dev = new seesaw.Seesaw(null)
 
 dev.pinMode(15, 1)
 
