@@ -376,15 +376,11 @@ Implementation Notes
             }
         }
 
-        public neopixelSendBuffer(buffer: Buffer) {
-            const cmd = pins.packBuffer(">H", [buffer.length]);
-            this.write(_NEOPIXEL_BASE, _NEOPIXEL_BUF_LENGTH, cmd)            
+        public neopixelSendBuffer(pin: number, buffer: Buffer) {
+            this.write(_NEOPIXEL_BASE, _NEOPIXEL_PIN, pins.createBufferFromArray([pin]));   
+            this.write(_NEOPIXEL_BASE, _NEOPIXEL_BUF_LENGTH, pins.packBuffer(">H", [buffer.length]));        
             this.write(_NEOPIXEL_BASE, _NEOPIXEL_BUF, buffer);
-        }
-
-        public neopixelShow() {
             this.write(_NEOPIXEL_BASE, _NEOPIXEL_SHOW, pins.createBuffer(0));
         }
     }
-
 }
