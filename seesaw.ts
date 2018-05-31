@@ -93,7 +93,7 @@ Implementation Notes
     const _HW_ID_CODE = 0x55
     const _EEPROM_I2C_ADDR = 0x3F
 
-    export class SeesawPinmap{
+    export class SeesawPinmap {
         analogPins: number[]
         pwmWidth: number
         pwmPins: number[]
@@ -120,7 +120,7 @@ Implementation Notes
             this.i2c_device = new pins.I2CDevice(addr)
             this.softwareReset()
         }
-        
+
         public softwareReset() {
             /** Trigger a software reset of the SeeSaw chip */
             this.write8(_STATUS_BASE, _STATUS_SWRST, 0xFF)
@@ -130,47 +130,47 @@ Implementation Notes
                 control.fail(`Seesaw hardware ID returned (${chip_id}) is not correct! Expected ${_HW_ID_CODE}. Please check your wiring.`)
             }
         }
-        
+
         public getOptions(): number {
             let buf = pins.createBuffer(4)
             this.read(_STATUS_BASE, _STATUS_OPTIONS, buf)
             let ret = pins.unpackBuffer(">I", buf)[0]
             return ret
         }
-        
+
         public getVersion(): number {
             let buf = pins.createBuffer(4)
             this.read(_STATUS_BASE, _STATUS_VERSION, buf)
             let ret = pins.unpackBuffer(">I", buf)[0]
             return ret
         }
-        
+
         public pinMode(pin: number, mode: number) {
             if (pin >= 32) {
                 this.pinModeBulkB(1 << pin - 32, mode)
             } else {
                 this.pinModeBulk(1 << pin, mode)
             }
-            
+
         }
-        
+
         public digitalWrite(pin: number, value: boolean) {
             if (pin >= 32) {
                 this.digitalWriteBulkB(1 << pin - 32, value)
             } else {
                 this.digitalWriteBulk(1 << pin, value)
             }
-            
+
         }
-        
+
         public digitalRead(pin: number): boolean {
             if (pin >= 32) {
                 return this.digitalReadBulkB(1 << pin - 32) != 0
             }
-            
+
             return this.digitalReadBulk(1 << pin) != 0
         }
-        
+
         public digitalReadBulk(pinSet: number): number {
             let buf = pins.createBuffer(4)
             this.read(_GPIO_BASE, _GPIO_BULK, buf)
@@ -178,14 +178,14 @@ Implementation Notes
             let ret = pins.unpackBuffer(">I", buf)[0]
             return ret & pinSet
         }
-        
+
         public digitalReadBulkB(pinSet: number): number {
             let buf = pins.createBuffer(8)
             this.read(_GPIO_BASE, _GPIO_BULK, buf)
             let ret = pins.unpackBuffer(">I", buf.slice(4))[0]
             return ret & pinSet
         }
-        
+
         public setGPIOInterrupts(pinSet: number, enabled: boolean) {
             let cmd = pins.packBuffer(">I", [pinSet])
             if (enabled) {
@@ -193,32 +193,32 @@ Implementation Notes
             } else {
                 this.write(_GPIO_BASE, _GPIO_INTENCLR, cmd)
             }
-            
+
         }
-        
+
         public analogRead(pin: number): number {
             let buf = pins.createBuffer(2)
             if (this.pinMapping.analogPins.indexOf(pin) < 0) {
                 control.fail("Invalid ADC pin")
             }
-            
+
             this.read(_ADC_BASE, _ADC_CHANNEL_OFFSET + this.pinMapping.analogPins.indexOf(pin), buf)
             let ret = pins.unpackBuffer(">H", buf)[0]
             pause(1)
             return ret
         }
-        
+
         public touchRead(pin: number): number {
             let buf = pins.createBuffer(2)
             if (this.pinMapping.touchPins.indexOf(pin) < 0) {
                 control.fail("Invalid touch pin")
             }
-            
+
             this.read(_TOUCH_BASE, _TOUCH_CHANNEL_OFFSET + this.pinMapping.touchPins.indexOf(pin), buf)
             let ret = pins.unpackBuffer(">H", buf)[0]
             return ret
         }
-        
+
         public pinModeBulk(pinSet: number, mode: number) {
             let cmd = pins.packBuffer(">I", [pinSet])
             if (mode == Seesaw.OUTPUT) {
@@ -236,9 +236,9 @@ Implementation Notes
             } else {
                 control.fail("Invalid pin mode")
             }
-            
+
         }
-        
+
         public pinModeBulkB(pinSet: number, mode: number) {
             let cmd = pins.createBuffer(8)
             cmd.write(4, pins.packBuffer(">I", [pinSet]))
@@ -257,9 +257,9 @@ Implementation Notes
             } else {
                 control.fail("Invalid pin mode")
             }
-            
+
         }
-        
+
         public digitalWriteBulk(pinSet: number, value: boolean) {
             let cmd = pins.packBuffer(">I", [pinSet])
             if (value) {
@@ -267,9 +267,9 @@ Implementation Notes
             } else {
                 this.write(_GPIO_BASE, _GPIO_BULK_CLR, cmd)
             }
-            
+
         }
-        
+
         public digitalWriteBulkB(pinSet: number, value: boolean) {
             let cmd = pins.createBuffer(8)
             cmd.write(4, pins.packBuffer(">I", [pinSet]))
@@ -278,9 +278,9 @@ Implementation Notes
             } else {
                 this.write(_GPIO_BASE, _GPIO_BULK_CLR, cmd)
             }
-            
+
         }
-        
+
         public analogWrite(pin: number, value: number) {
             let pin_found = false
             let cmd = pins.createBuffer(3)
@@ -290,19 +290,19 @@ Implementation Notes
                     pin_found = true
                     cmd = pins.createBufferFromArray([this.pinMapping.pwmPins.indexOf(pin), value >> 8, value])
                 }
-                
+
             } else if (this.pinMapping.pwmPins.indexOf(pin) >= 0) {
                 pin_found = true
                 cmd = pins.createBufferFromArray([this.pinMapping.pwmPins.indexOf(pin), value])
             }
-            
+
             if (pin_found === false) {
                 control.fail("Invalid PWM pin")
             }
-            
+
             this.write(_TIMER_BASE, _TIMER_PWM, cmd)
         }
-        
+
         public setPwmFreq(pin: number, freq: number) {
             if (this.pinMapping.pwmPins.indexOf(pin) >= 0) {
                 let cmd = pins.createBufferFromArray([this.pinMapping.pwmPins.indexOf(pin), freq >> 8, freq])
@@ -310,36 +310,36 @@ Implementation Notes
             } else {
                 control.fail("Invalid PWM pin")
             }
-            
+
         }
-        
+
         public eepromWrite8(addr: number, val: number) {
             this.eepromWrite(addr, pins.createBufferFromArray([val]))
         }
-        
+
         public eepromWrite(addr: number, buf: Buffer) {
             this.write(_EEPROM_BASE, addr, buf)
         }
-        
+
         public eepromRead8(addr: number) {
             return this.read8(_EEPROM_BASE, addr)
         }
-        
+
         public uartSetBaud(baud: number) {
             let cmd = pins.packBuffer(">I", [baud])
             this.write(_SERCOM0_BASE, _SERCOM_BAUD, cmd)
         }
-        
+
         public write8(reg_base: number, reg: number, value: number) {
             this.write(reg_base, reg, pins.createBufferFromArray([value]))
         }
-        
+
         public read8(reg_base: number, reg: number): number {
             let ret = pins.createBuffer(1)
             this.read(reg_base, reg, ret)
             return ret[0]
         }
-        
+
         public read(reg_base: number, reg: number, buf: Buffer, delay: number = 0.001) {
             this.write(reg_base, reg, pins.createBufferFromArray([]))
             if (this._drdy !== null) {
@@ -349,33 +349,42 @@ Implementation Notes
             } else {
                 pause(delay * 1000)
             }
-            
+
             {
                 const i2c = this.i2c_device.begin()
                 i2c.readInto(buf)
                 i2c.end()
             }
         }
-        
+
         public write(reg_base: number, reg: number, buf: Buffer) {
             let cmds = pins.createBufferFromArray([reg_base, reg])
             let fullBuf = pins.createBuffer(2 + buf.length)
             fullBuf.write(0, cmds)
             fullBuf.write(2, buf)
-            
+
             if (this._drdy !== null) {
                 while (this._drdy.digitalRead() === false) {
                     ;
                 }
             }
-            
+
             {
                 const i2c = this.i2c_device.begin()
                 i2c.write(fullBuf)
                 i2c.end()
             }
         }
-        
+
+        public neopixelSendBuffer(buffer: Buffer) {
+            const cmd = pins.packBuffer(">H", [buffer.length]);
+            this.write(_NEOPIXEL_BASE, _NEOPIXEL_BUF_LENGTH, cmd)            
+            this.write(_NEOPIXEL_BASE, _NEOPIXEL_BUF, buffer);
+        }
+
+        public neopixelShow() {
+            this.write(_NEOPIXEL_BASE, _NEOPIXEL_SHOW, pins.createBuffer(0));
+        }
     }
-    
+
 }
