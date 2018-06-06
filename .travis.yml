@@ -6,6 +6,9 @@ script:
     - "pxt target adafruit"
     - "pxt install"
     - "pxt build"
+    - "pxt target microbit"
+    - "pxt install"
+    - "pxt build"
 sudo: false
 cache:
     directories:
