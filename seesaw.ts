@@ -278,7 +278,7 @@ Implementation Notes
         static INPUT_PULLUP = 0x02
         static INPUT_PULLDOWN = 0x03
 
-        constructor(pinmap: SeesawPinmap, addr: number = 0x49, waitForPin: () => void = false) {
+        constructor(pinmap: SeesawPinmap, addr: number = 0x49, waitForPin?: () => void) {
             this.pinMapping = pinmap
             this.i2c_device = new I2CDevice(addr);
             this._waitForPin = waitForPin;
