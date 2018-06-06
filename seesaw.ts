@@ -3,6 +3,165 @@
 //
 
 namespace seesaw {
+    // cross compat helper
+    // these types do not exist in micro:bit v0 (yet)
+    class I2CDevice {
+        public address: number;
+        private _hasError: boolean;
+        constructor(address: number) {
+            this.address = address
+        }
+        public readInto(buf: Buffer, repeat = false, start = 0, end: number = null) {
+            if (end === null)
+                end = buf.length
+            if (start >= end)
+                return
+            let res = pins.i2cReadBuffer(this.address, end - start, repeat)
+            if (!res) {
+                this._hasError = true
+                return
+            }
+            buf.write(start, res)
+        }
+        public write(buf: Buffer, repeat = false) {
+            // TODO: microbit v0 backward compat
+            /* let res = */ pins.i2cWriteBuffer(this.address, buf, repeat)
+            /*
+            if (res) {
+                this._hasError = true
+            }*/
+        }
+        public begin(): I2CDevice {
+            this._hasError = false;
+            return this;
+        }
+        public end() {
+        }
+        public ok() {
+            return !this._hasError
+        }
+    }
+
+    function sizeOf(format: NumberFormat) {
+        switch (format) {
+            case NumberFormat.Int8LE:
+            case NumberFormat.UInt8LE:
+            case NumberFormat.Int8BE:
+            case NumberFormat.UInt8BE:
+                return 1;
+            case NumberFormat.Int16LE:
+            case NumberFormat.UInt16LE:
+            case NumberFormat.Int16BE:
+            case NumberFormat.UInt16BE:
+                return 2;
+            case NumberFormat.Int32LE:
+            case NumberFormat.Int32BE:
+            //case NumberFormat.UInt32BE:
+            //case NumberFormat.UInt32LE:
+            //case NumberFormat.Float32BE:
+            //case NumberFormat.Float32LE:
+                return 4;
+            //case NumberFormat.Float64BE:
+            //case NumberFormat.Float64LE:
+            //    return 8;
+        }
+        return 0;
+    }
+
+    function createBufferFromArray(bytes: number[]) {
+        let buf = pins.createBuffer(bytes.length)
+        for (let i = 0; i < bytes.length; ++i)
+            buf[i] = bytes[i]
+        return buf
+    }
+
+    function getFormat(pychar: string, isBig: boolean) {
+        switch (pychar) {
+            case 'B':
+                return NumberFormat.UInt8LE
+            case 'b':
+                return NumberFormat.Int8LE
+            case 'H':
+                return isBig ? NumberFormat.UInt16BE : NumberFormat.UInt16LE
+            case 'h':
+                return isBig ? NumberFormat.Int16BE : NumberFormat.Int16LE
+            case 'I':
+            //case 'L':
+            //    return isBig ? NumberFormat.UInt32BE : NumberFormat.UInt32LE
+            case 'i':
+            case 'l':
+                return isBig ? NumberFormat.Int32BE : NumberFormat.Int32LE
+            //case 'f':
+            //    return isBig ? NumberFormat.Float32BE : NumberFormat.Float32LE
+            //case 'd':
+            //    return isBig ? NumberFormat.Float64BE : NumberFormat.Float64LE
+            default:
+                return null as NumberFormat
+        }
+    }
+
+    function packUnpackCore(format: string, nums: number[], buf: Buffer, isPack: boolean, off = 0) {
+        let isBig = false
+        let idx = 0
+        for (let i = 0; i < format.length; ++i) {
+            switch (format[i]) {
+                case ' ':
+                case '<':
+                case '=':
+                    isBig = false
+                    break
+                case '>':
+                case '!':
+                    isBig = true
+                    break
+                case 'x':
+                    off++
+                    break
+                default:
+                    let fmt = getFormat(format[i], isBig)
+                    control.assert(fmt !== null, "Not supported format character: " + format[i]);
+                    if (buf) {
+                        if (isPack)
+                            buf.setNumber(fmt, off, nums[idx++])
+                        else
+                            nums.push(buf.getNumber(fmt, off))
+                    }
+
+                    off += pins.sizeOf(fmt)
+                    break
+            }
+        }
+        return off
+    }
+
+    function packedSize(format: string) {
+        return packUnpackCore(format, null, null, true)
+    }
+
+    function packBuffer(format: string, nums: number[]) {
+        let buf = pins.createBuffer(packedSize(format))
+        packUnpackCore(format, nums, buf, true)
+        return buf
+    }
+
+    function packIntoBuffer(format: string, buf: Buffer, offset: number, nums: number[]) {
+        packUnpackCore(format, nums, buf, true, offset)
+    }
+
+    function unpackBuffer(format: string, buf: Buffer, offset = 0) {
+        let res: number[] = []
+        packUnpackCore(format, res, buf, false, offset)
+        return res
+    }
+
+    function fail(msg: string) {
+        control.assert(false, msg);
+    }
+
+    function pause(millis: number) {
+        // TODO
+    }
+
     // The MIT License (MIT)
     // Copyright (c) 2017 Dean Miller for Adafruit Industries
     // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -101,8 +260,7 @@ Implementation Notes
     }
 
     export class Seesaw {
-        _drdy: DigitalPin;
-        private i2c_device: pins.I2CDevice;
+        private i2c_device: I2CDevice;
         pinMapping: SeesawPinmap;
         /** Driver for Seesaw i2c generic conversion trip
 
@@ -114,10 +272,9 @@ Implementation Notes
         static INPUT_PULLUP = 0x02
         static INPUT_PULLDOWN = 0x03
 
-        constructor(pinmap: SeesawPinmap, addr: number = 0x49, drdy: DigitalPin = null) {
-            this._drdy = drdy
+        constructor(pinmap: SeesawPinmap, addr: number = 0x49) {
             this.pinMapping = pinmap
-            this.i2c_device = new pins.I2CDevice(addr)
+            this.i2c_device = new I2CDevice(addr)
             this.softwareReset()
         }
 
@@ -127,21 +284,21 @@ Implementation Notes
             pause(500)
             let chip_id = this.read8(_STATUS_BASE, _STATUS_HW_ID)
             if (chip_id != _HW_ID_CODE) {
-                control.fail(`Seesaw hardware ID returned (${chip_id}) is not correct! Expected ${_HW_ID_CODE}. Please check your wiring.`)
+                fail(`Seesaw hardware ID returned (${chip_id}) is not correct! Expected ${_HW_ID_CODE}. Please check your wiring.`)
             }
         }
 
         public getOptions(): number {
             let buf = pins.createBuffer(4)
             this.read(_STATUS_BASE, _STATUS_OPTIONS, buf)
-            let ret = pins.unpackBuffer(">I", buf)[0]
+            let ret = unpackBuffer(">I", buf)[0]
             return ret
         }
 
         public getVersion(): number {
             let buf = pins.createBuffer(4)
             this.read(_STATUS_BASE, _STATUS_VERSION, buf)
-            let ret = pins.unpackBuffer(">I", buf)[0]
+            let ret = unpackBuffer(">I", buf)[0]
             return ret
         }
 
@@ -175,19 +332,19 @@ Implementation Notes
             let buf = pins.createBuffer(4)
             this.read(_GPIO_BASE, _GPIO_BULK, buf)
             buf[0] = buf[0] & 0x3F
-            let ret = pins.unpackBuffer(">I", buf)[0]
+            let ret = unpackBuffer(">I", buf)[0]
             return ret & pinSet
         }
 
         public digitalReadBulkB(pinSet: number): number {
             let buf = pins.createBuffer(8)
             this.read(_GPIO_BASE, _GPIO_BULK, buf)
-            let ret = pins.unpackBuffer(">I", buf.slice(4))[0]
+            let ret = unpackBuffer(">I", buf.slice(4))[0]
             return ret & pinSet
         }
 
         public setGPIOInterrupts(pinSet: number, enabled: boolean) {
-            let cmd = pins.packBuffer(">I", [pinSet])
+            let cmd = packBuffer(">I", [pinSet])
             if (enabled) {
                 this.write(_GPIO_BASE, _GPIO_INTENSET, cmd)
             } else {
@@ -199,11 +356,11 @@ Implementation Notes
         public analogRead(pin: number): number {
             let buf = pins.createBuffer(2)
             if (this.pinMapping.analogPins.indexOf(pin) < 0) {
-                control.fail("Invalid ADC pin")
+                fail("Invalid ADC pin")
             }
 
             this.read(_ADC_BASE, _ADC_CHANNEL_OFFSET + this.pinMapping.analogPins.indexOf(pin), buf)
-            let ret = pins.unpackBuffer(">H", buf)[0]
+            let ret = unpackBuffer(">H", buf)[0]
             pause(1)
             return ret
         }
@@ -211,16 +368,16 @@ Implementation Notes
         public touchRead(pin: number): number {
             let buf = pins.createBuffer(2)
             if (this.pinMapping.touchPins.indexOf(pin) < 0) {
-                control.fail("Invalid touch pin")
+                fail("Invalid touch pin")
             }
 
             this.read(_TOUCH_BASE, _TOUCH_CHANNEL_OFFSET + this.pinMapping.touchPins.indexOf(pin), buf)
-            let ret = pins.unpackBuffer(">H", buf)[0]
+            let ret = unpackBuffer(">H", buf)[0]
             return ret
         }
 
         public pinModeBulk(pinSet: number, mode: number) {
-            let cmd = pins.packBuffer(">I", [pinSet])
+            let cmd = packBuffer(">I", [pinSet])
             if (mode == Seesaw.OUTPUT) {
                 this.write(_GPIO_BASE, _GPIO_DIRSET_BULK, cmd)
             } else if (mode == Seesaw.INPUT) {
@@ -234,14 +391,14 @@ Implementation Notes
                 this.write(_GPIO_BASE, _GPIO_PULLENSET, cmd)
                 this.write(_GPIO_BASE, _GPIO_BULK_CLR, cmd)
             } else {
-                control.fail("Invalid pin mode")
+                fail("Invalid pin mode")
             }
 
         }
 
         public pinModeBulkB(pinSet: number, mode: number) {
             let cmd = pins.createBuffer(8)
-            cmd.write(4, pins.packBuffer(">I", [pinSet]))
+            cmd.write(4, packBuffer(">I", [pinSet]))
             if (mode == Seesaw.OUTPUT) {
                 this.write(_GPIO_BASE, _GPIO_DIRSET_BULK, cmd)
             } else if (mode == Seesaw.INPUT) {
@@ -255,13 +412,13 @@ Implementation Notes
                 this.write(_GPIO_BASE, _GPIO_PULLENSET, cmd)
                 this.write(_GPIO_BASE, _GPIO_BULK_CLR, cmd)
             } else {
-                control.fail("Invalid pin mode")
+                fail("Invalid pin mode")
             }
 
         }
 
         public digitalWriteBulk(pinSet: number, value: boolean) {
-            let cmd = pins.packBuffer(">I", [pinSet])
+            let cmd = packBuffer(">I", [pinSet])
             if (value) {
                 this.write(_GPIO_BASE, _GPIO_BULK_SET, cmd)
             } else {
@@ -272,7 +429,7 @@ Implementation Notes
 
         public digitalWriteBulkB(pinSet: number, value: boolean) {
             let cmd = pins.createBuffer(8)
-            cmd.write(4, pins.packBuffer(">I", [pinSet]))
+            cmd.write(4, packBuffer(">I", [pinSet]))
             if (value) {
                 this.write(_GPIO_BASE, _GPIO_BULK_SET, cmd)
             } else {
@@ -288,16 +445,16 @@ Implementation Notes
             if (this.pinMapping.pwmWidth == 16) {
                 if (this.pinMapping.pwmPins.indexOf(pin) >= 0) {
                     pin_found = true
-                    cmd = pins.createBufferFromArray([this.pinMapping.pwmPins.indexOf(pin), value >> 8, value])
+                    cmd = createBufferFromArray([this.pinMapping.pwmPins.indexOf(pin), value >> 8, value])
                 }
 
             } else if (this.pinMapping.pwmPins.indexOf(pin) >= 0) {
                 pin_found = true
-                cmd = pins.createBufferFromArray([this.pinMapping.pwmPins.indexOf(pin), value])
+                cmd = createBufferFromArray([this.pinMapping.pwmPins.indexOf(pin), value])
             }
 
             if (pin_found === false) {
-                control.fail("Invalid PWM pin")
+                fail("Invalid PWM pin")
             }
 
             this.write(_TIMER_BASE, _TIMER_PWM, cmd)
@@ -305,16 +462,16 @@ Implementation Notes
 
         public setPwmFreq(pin: number, freq: number) {
             if (this.pinMapping.pwmPins.indexOf(pin) >= 0) {
-                let cmd = pins.createBufferFromArray([this.pinMapping.pwmPins.indexOf(pin), freq >> 8, freq])
+                let cmd = createBufferFromArray([this.pinMapping.pwmPins.indexOf(pin), freq >> 8, freq])
                 this.write(_TIMER_BASE, _TIMER_FREQ, cmd)
             } else {
-                control.fail("Invalid PWM pin")
+                fail("Invalid PWM pin")
             }
 
         }
 
         public eepromWrite8(addr: number, val: number) {
-            this.eepromWrite(addr, pins.createBufferFromArray([val]))
+            this.eepromWrite(addr, createBufferFromArray([val]))
         }
 
         public eepromWrite(addr: number, buf: Buffer) {
@@ -326,12 +483,12 @@ Implementation Notes
         }
 
         public uartSetBaud(baud: number) {
-            let cmd = pins.packBuffer(">I", [baud])
+            let cmd = packBuffer(">I", [baud])
             this.write(_SERCOM0_BASE, _SERCOM_BAUD, cmd)
         }
 
         public write8(reg_base: number, reg: number, value: number) {
-            this.write(reg_base, reg, pins.createBufferFromArray([value]))
+            this.write(reg_base, reg, createBufferFromArray([value]))
         }
 
         public read8(reg_base: number, reg: number): number {
@@ -340,15 +497,9 @@ Implementation Notes
             return ret[0]
         }
 
-        public read(reg_base: number, reg: number, buf: Buffer, delay: number = 0.001) {
-            this.write(reg_base, reg, pins.createBufferFromArray([]))
-            if (this._drdy !== null) {
-                while (this._drdy.digitalRead() === false) {
-                    ;
-                }
-            } else {
-                pause(delay * 1000)
-            }
+        public read(reg_base: number, reg: number, buf: Buffer, delay: number = 1) {
+            this.write(reg_base, reg, createBufferFromArray([]))
+            pause(delay)
 
             {
                 const i2c = this.i2c_device.begin()
@@ -358,16 +509,10 @@ Implementation Notes
         }
 
         public write(reg_base: number, reg: number, buf: Buffer) {
-            let cmds = pins.createBufferFromArray([reg_base, reg])
+            let cmds = createBufferFromArray([reg_base, reg])
             let fullBuf = pins.createBuffer(2 + buf.length)
             fullBuf.write(0, cmds)
             fullBuf.write(2, buf)
-
-            if (this._drdy !== null) {
-                while (this._drdy.digitalRead() === false) {
-                    ;
-                }
-            }
 
             {
                 const i2c = this.i2c_device.begin()
@@ -377,8 +522,8 @@ Implementation Notes
         }
 
         public neopixelSendBuffer(pin: number, buffer: Buffer) {
-            this.write(_NEOPIXEL_BASE, _NEOPIXEL_PIN, pins.createBufferFromArray([pin]));   
-            this.write(_NEOPIXEL_BASE, _NEOPIXEL_BUF_LENGTH, pins.packBuffer(">H", [buffer.length]));        
+            this.write(_NEOPIXEL_BASE, _NEOPIXEL_PIN, createBufferFromArray([pin]));   
+            this.write(_NEOPIXEL_BASE, _NEOPIXEL_BUF_LENGTH, packBuffer(">H", [buffer.length]));        
             this.write(_NEOPIXEL_BASE, _NEOPIXEL_BUF, buffer);
             this.write(_NEOPIXEL_BASE, _NEOPIXEL_SHOW, pins.createBuffer(0));
         }
