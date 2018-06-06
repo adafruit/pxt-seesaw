@@ -56,10 +56,10 @@ namespace seesaw {
                 return 2;
             case NumberFormat.Int32LE:
             case NumberFormat.Int32BE:
-            //case NumberFormat.UInt32BE:
-            //case NumberFormat.UInt32LE:
-            //case NumberFormat.Float32BE:
-            //case NumberFormat.Float32LE:
+                //case NumberFormat.UInt32BE:
+                //case NumberFormat.UInt32LE:
+                //case NumberFormat.Float32BE:
+                //case NumberFormat.Float32LE:
                 return 4;
             //case NumberFormat.Float64BE:
             //case NumberFormat.Float64LE:
@@ -266,6 +266,7 @@ Implementation Notes
 
     export class Seesaw {
         private i2c_device: I2CDevice;
+        private _waitForPin: () => void;
         pinMapping: SeesawPinmap;
         /** Driver for Seesaw i2c generic conversion trip
 
@@ -277,9 +278,10 @@ Implementation Notes
         static INPUT_PULLUP = 0x02
         static INPUT_PULLDOWN = 0x03
 
-        constructor(pinmap: SeesawPinmap, addr: number = 0x49) {
+        constructor(pinmap: SeesawPinmap, addr: number = 0x49, waitForPin: () => void = false) {
             this.pinMapping = pinmap
-            this.i2c_device = new I2CDevice(addr)
+            this.i2c_device = new I2CDevice(addr);
+            this._waitForPin = waitForPin;
             this.softwareReset()
         }
 
@@ -504,7 +506,10 @@ Implementation Notes
 
         public read(reg_base: number, reg: number, buf: Buffer, delay: number = 1) {
             this.write(reg_base, reg, createBufferFromArray([]))
-            pause(delay)
+            if (this._waitForPin)
+                this._waitForPin();
+            else
+                pause(delay)
 
             {
                 const i2c = this.i2c_device.begin()
@@ -519,6 +524,9 @@ Implementation Notes
             fullBuf.write(0, cmds)
             fullBuf.write(2, buf)
 
+            if (this._waitForPin)
+                this._waitForPin();
+
             {
                 const i2c = this.i2c_device.begin()
                 i2c.write(fullBuf)
@@ -527,8 +535,8 @@ Implementation Notes
         }
 
         public neopixelSendBuffer(pin: number, buffer: Buffer) {
-            this.write(_NEOPIXEL_BASE, _NEOPIXEL_PIN, createBufferFromArray([pin]));   
-            this.write(_NEOPIXEL_BASE, _NEOPIXEL_BUF_LENGTH, packBuffer(">H", [buffer.length]));        
+            this.write(_NEOPIXEL_BASE, _NEOPIXEL_PIN, createBufferFromArray([pin]));
+            this.write(_NEOPIXEL_BASE, _NEOPIXEL_BUF_LENGTH, packBuffer(">H", [buffer.length]));
             this.write(_NEOPIXEL_BASE, _NEOPIXEL_BUF, buffer);
             this.write(_NEOPIXEL_BASE, _NEOPIXEL_SHOW, pins.createBuffer(0));
         }
