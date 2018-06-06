@@ -158,10 +158,12 @@ namespace seesaw {
     }
 
     function fail(msg: string) {
-        control.assert(false, msg);
+        // TODO: backward compat fail in microbit v0
+        control.panic(108);
     }
 
     function pause(millis: number) {
+        // TODO: backward compat pause in microbit v0
         basic.pause(millis);
     }
 
