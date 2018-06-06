@@ -9,18 +9,6 @@ A MakeCode package for [Adafruit Seesaw I2C protocol](https://learn.adafruit.com
 Create a ``seesaw.Seesaw`` object and call the various interfaces. 
 Optionally, pass the i2c device address in the constructor.
 
-Here is the famous ``blinky`` example.
-```typescript
-const dev = new seesaw.Seesaw();
-dev.pinMode(15, 1);
-forever(() => {
-    dev.digitalWrite(15, true);
-    pause(500)
-    dev.digitalWrite(15, false);
-    pause(500)    
-})
-```
-
 ## Building
 
 * install the PXT cli (make sure Node.js 8+ is installed)
@@ -60,5 +48,7 @@ MIT
 
 * for PXT/adafruit https://makecode.adafruit.com
 * for PXT/maker https://maker.makecode.com
+* for PXT/microbit https://makecode.microbit.org
 * for PXT/codal
+
 (The metadata above is needed for package search.)

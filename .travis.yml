@@ -6,8 +6,11 @@ script:
     - "pxt target adafruit"
     - "pxt install"
     - "pxt build"
+    - "rm -f -r pxt_modules"
+    - "pxt target microbit"
+    - "pxt install"
+    - "pxt build"
 sudo: false
 cache:
     directories:
     - npm_modules
-    - pxt_modules
