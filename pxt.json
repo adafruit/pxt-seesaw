@@ -13,13 +13,5 @@
     "testFiles": [
         "test.ts"
     ],
-    "public": true,
-    "yotta": {},
-    "targetVersions": {
-        "branch": "v1.1.21",
-        "tag": "v1.1.21",
-        "commits": "https://github.com/Microsoft/pxt-adafruit/commits/c62d6073cd2ab55d7f317bd6baaa58cb6cb861a3",
-        "target": "1.1.21",
-        "pxt": "3.16.5"
-    }
+    "public": true
 }
