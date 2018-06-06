@@ -14,4 +14,3 @@ sudo: false
 cache:
     directories:
     - npm_modules
-    - pxt_modules
