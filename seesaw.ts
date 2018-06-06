@@ -85,7 +85,7 @@ namespace seesaw {
                 return isBig ? NumberFormat.UInt16BE : NumberFormat.UInt16LE
             case 'h':
                 return isBig ? NumberFormat.Int16BE : NumberFormat.Int16LE
-            case 'I':
+            //case 'I':
             //case 'L':
             //    return isBig ? NumberFormat.UInt32BE : NumberFormat.UInt32LE
             case 'i':
