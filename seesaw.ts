@@ -119,15 +119,18 @@ namespace seesaw {
                     break
                 default:
                     let fmt = getFormat(format[i], isBig)
-                    control.assert(fmt !== null, "Not supported format character: " + format[i]);
-                    if (buf) {
-                        if (isPack)
-                            buf.setNumber(fmt, off, nums[idx++])
-                        else
-                            nums.push(buf.getNumber(fmt, off))
-                    }
+                    if (fmt === null) {
+                        fail("Not supported format character: " + format[i])
+                    } else {
+                        if (buf) {
+                            if (isPack)
+                                buf.setNumber(fmt, off, nums[idx++])
+                            else
+                                nums.push(buf.getNumber(fmt, off))
+                        }
 
-                    off += pins.sizeOf(fmt)
+                        off += pins.sizeOf(fmt)
+                    }
                     break
             }
         }
@@ -159,7 +162,7 @@ namespace seesaw {
     }
 
     function pause(millis: number) {
-        // TODO
+        basic.pause(millis);
     }
 
     // The MIT License (MIT)
