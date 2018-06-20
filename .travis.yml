@@ -7,9 +7,9 @@ script:
     - "pxt install"
     - "pxt build"
     - "rm -f -r pxt_modules"
-    - "pxt target microbit"
-    - "pxt install"
-    - "pxt build"
+#    - "pxt target microbit"
+#    - "pxt install"
+#    - "pxt build"
 sudo: false
 cache:
     directories:
