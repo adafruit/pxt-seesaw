@@ -289,10 +289,12 @@ Implementation Notes
             /** Trigger a software reset of the SeeSaw chip */
             this.write8(_STATUS_BASE, _STATUS_SWRST, 0xFF)
             pause(500)
+            /*
             let chip_id = this.read8(_STATUS_BASE, _STATUS_HW_ID)
             if (chip_id != _HW_ID_CODE) {
                 fail(`Seesaw hardware ID returned (${chip_id}) is not correct! Expected ${_HW_ID_CODE}. Please check your wiring.`)
             }
+            */
         }
 
         public getOptions(): number {
