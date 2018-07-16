@@ -85,9 +85,9 @@ namespace seesaw {
                 return isBig ? NumberFormat.UInt16BE : NumberFormat.UInt16LE
             case 'h':
                 return isBig ? NumberFormat.Int16BE : NumberFormat.Int16LE
-            case 'I':
-            case 'L':
-                return isBig ? NumberFormat.UInt32BE : NumberFormat.UInt32LE
+            //case 'I':
+            //case 'L':
+            //    return isBig ? NumberFormat.UInt32BE : NumberFormat.UInt32LE
             case 'i':
             case 'l':
                 return isBig ? NumberFormat.Int32BE : NumberFormat.Int32LE
@@ -297,10 +297,11 @@ Implementation Notes
             */
         }
 
+        /* These won't work on microbit and aren't currently used anyway
         public getOptions(): number {
             let buf = pins.createBuffer(4)
             this.read(_STATUS_BASE, _STATUS_OPTIONS, buf)
-            let ret = unpackBuffer(">I", buf)[0]
+            //let ret = unpackBuffer(">I", buf)[0]
             return ret
         }
 
@@ -310,50 +311,63 @@ Implementation Notes
             let ret = unpackBuffer(">I", buf)[0]
             return ret
         }
+        */
+
+        getPinArray(pin: number) : Buffer {
+            let buf = pins.createBuffer(8)
+            pin = pin | 0;
+            if(pin > 63 || pin < 0)
+                fail("Invalid pin")
+            else if(pin >= 48){
+                buf.write(4, pins.packBuffer(">H", [1 << (pin - 48)]))
+            }
+            else if(pin >= 32){
+                buf.write(6, pins.packBuffer(">H", [1 << (pin - 32)]))
+            }
+            else if(pin >= 16){
+                buf.write(0, pins.packBuffer(">H", [1 << (pin - 16)]))
+            }
+            else {
+                buf.write(2, pins.packBuffer(">H", [1 << pin]))
+            }
+            return buf
+        }
 
         public pinMode(pin: number, mode: number) {
-            if (pin >= 32) {
-                this.pinModeBulkB(1 << pin - 32, mode)
-            } else {
-                this.pinModeBulk(1 << pin, mode)
-            }
-
+            mode = mode | 0;
+            let buf = this.getPinArray(pin)
+            this.pinModeBulk(buf, mode)
         }
 
         public digitalWrite(pin: number, value: boolean) {
-            if (pin >= 32) {
-                this.digitalWriteBulkB(1 << pin - 32, value)
-            } else {
-                this.digitalWriteBulk(1 << pin, value)
-            }
-
+            let buf = this.getPinArray(pin)
+            this.digitalWriteBulk(buf, value)
         }
 
         public digitalRead(pin: number): boolean {
-            if (pin >= 32) {
-                return this.digitalReadBulkB(1 << pin - 32) != 0
+            let buf = this.getPinArray(pin)
+            let readVals = this.digitalReadBulk(buf)
+            for(let i=0; i<8; i++){
+                if(readVals[i] > 0){
+                    return true
+                }
             }
-
-            return this.digitalReadBulk(1 << pin) != 0
+            return false
         }
 
-        public digitalReadBulk(pinSet: number): number {
-            let buf = pins.createBuffer(4)
-            this.read(_GPIO_BASE, _GPIO_BULK, buf)
-            buf[0] = buf[0] & 0x3F
-            let ret = unpackBuffer(">I", buf)[0]
-            return ret & pinSet
-        }
-
-        public digitalReadBulkB(pinSet: number): number {
+        public digitalReadBulk(pinSet: Buffer): number[] {
             let buf = pins.createBuffer(8)
             this.read(_GPIO_BASE, _GPIO_BULK, buf)
-            let ret = unpackBuffer(">I", buf.slice(4))[0]
-            return ret & pinSet
+            let ret = [0, 0, 0, 0, 0, 0, 0, 0]
+            for(let i=1; i<8; i++){ //TODO: why are we not getting the first byte??
+                ret[i] = buf[i] & pinSet[i]
+            }
+            return ret
         }
 
-        public setGPIOInterrupts(pinSet: number, enabled: boolean) {
-            let cmd = packBuffer(">I", [pinSet])
+        /* TODO:
+        public setGPIOInterrupts(pinSet: number[], enabled: boolean) {
+            let cmd = pins.createBufferFromArray(pinSet)
             if (enabled) {
                 this.write(_GPIO_BASE, _GPIO_INTENSET, cmd)
             } else {
@@ -361,6 +375,7 @@ Implementation Notes
             }
 
         }
+        */
 
         public analogRead(pin: number): number {
             let buf = pins.createBuffer(2)
@@ -385,68 +400,33 @@ Implementation Notes
             return ret
         }
 
-        public pinModeBulk(pinSet: number, mode: number) {
-            let cmd = packBuffer(">I", [pinSet])
+        public pinModeBulk(pinSet: Buffer, mode: number) {
             if (mode == Seesaw.OUTPUT) {
-                this.write(_GPIO_BASE, _GPIO_DIRSET_BULK, cmd)
+                this.write(_GPIO_BASE, _GPIO_DIRSET_BULK, pinSet)
             } else if (mode == Seesaw.INPUT) {
-                this.write(_GPIO_BASE, _GPIO_DIRCLR_BULK, cmd)
+                this.write(_GPIO_BASE, _GPIO_DIRCLR_BULK, pinSet)
             } else if (mode == Seesaw.INPUT_PULLUP) {
-                this.write(_GPIO_BASE, _GPIO_DIRCLR_BULK, cmd)
-                this.write(_GPIO_BASE, _GPIO_PULLENSET, cmd)
-                this.write(_GPIO_BASE, _GPIO_BULK_SET, cmd)
+                this.write(_GPIO_BASE, _GPIO_DIRCLR_BULK, pinSet)
+                this.write(_GPIO_BASE, _GPIO_PULLENSET, pinSet)
+                this.write(_GPIO_BASE, _GPIO_BULK_SET, pinSet)
             } else if (mode == Seesaw.INPUT_PULLDOWN) {
-                this.write(_GPIO_BASE, _GPIO_DIRCLR_BULK, cmd)
-                this.write(_GPIO_BASE, _GPIO_PULLENSET, cmd)
-                this.write(_GPIO_BASE, _GPIO_BULK_CLR, cmd)
+                this.write(_GPIO_BASE, _GPIO_DIRCLR_BULK, pinSet)
+                this.write(_GPIO_BASE, _GPIO_PULLENSET, pinSet)
+                this.write(_GPIO_BASE, _GPIO_BULK_CLR, pinSet)
             } else {
                 fail("Invalid pin mode")
             }
 
         }
 
-        public pinModeBulkB(pinSet: number, mode: number) {
-            let cmd = pins.createBuffer(8)
-            cmd.write(4, packBuffer(">I", [pinSet]))
-            if (mode == Seesaw.OUTPUT) {
-                this.write(_GPIO_BASE, _GPIO_DIRSET_BULK, cmd)
-            } else if (mode == Seesaw.INPUT) {
-                this.write(_GPIO_BASE, _GPIO_DIRCLR_BULK, cmd)
-            } else if (mode == Seesaw.INPUT_PULLUP) {
-                this.write(_GPIO_BASE, _GPIO_DIRCLR_BULK, cmd)
-                this.write(_GPIO_BASE, _GPIO_PULLENSET, cmd)
-                this.write(_GPIO_BASE, _GPIO_BULK_SET, cmd)
-            } else if (mode == Seesaw.INPUT_PULLDOWN) {
-                this.write(_GPIO_BASE, _GPIO_DIRCLR_BULK, cmd)
-                this.write(_GPIO_BASE, _GPIO_PULLENSET, cmd)
-                this.write(_GPIO_BASE, _GPIO_BULK_CLR, cmd)
-            } else {
-                fail("Invalid pin mode")
-            }
-
-        }
-
-        public digitalWriteBulk(pinSet: number, value: boolean) {
-            let cmd = packBuffer(">I", [pinSet])
+        public digitalWriteBulk(pinSet: Buffer, value: boolean) {
             if (value) {
-                this.write(_GPIO_BASE, _GPIO_BULK_SET, cmd)
+                this.write(_GPIO_BASE, _GPIO_BULK_SET, pinSet)
             } else {
-                this.write(_GPIO_BASE, _GPIO_BULK_CLR, cmd)
+                this.write(_GPIO_BASE, _GPIO_BULK_CLR, pinSet)
             }
 
         }
-
-        public digitalWriteBulkB(pinSet: number, value: boolean) {
-            let cmd = pins.createBuffer(8)
-            cmd.write(4, packBuffer(">I", [pinSet]))
-            if (value) {
-                this.write(_GPIO_BASE, _GPIO_BULK_SET, cmd)
-            } else {
-                this.write(_GPIO_BASE, _GPIO_BULK_CLR, cmd)
-            }
-
-        }
-
         public analogWrite(pin: number, value: number) {
             let pin_found = false
             let cmd = pins.createBuffer(3)
@@ -491,10 +471,12 @@ Implementation Notes
             return this.read8(_EEPROM_BASE, addr)
         }
 
+        /* TODO:
         public uartSetBaud(baud: number) {
             let cmd = packBuffer(">I", [baud])
             this.write(_SERCOM0_BASE, _SERCOM_BAUD, cmd)
         }
+        */
 
         public write8(reg_base: number, reg: number, value: number) {
             this.write(reg_base, reg, createBufferFromArray([value]))
