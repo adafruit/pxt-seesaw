@@ -319,16 +319,16 @@ Implementation Notes
             if(pin > 63 || pin < 0)
                 fail("Invalid pin")
             else if(pin >= 48){
-                buf.write(4, pins.packBuffer(">H", [1 << (pin - 48)]))
+                buf.write(4, packBuffer(">H", [1 << (pin - 48)]))
             }
             else if(pin >= 32){
-                buf.write(6, pins.packBuffer(">H", [1 << (pin - 32)]))
+                buf.write(6, packBuffer(">H", [1 << (pin - 32)]))
             }
             else if(pin >= 16){
-                buf.write(0, pins.packBuffer(">H", [1 << (pin - 16)]))
+                buf.write(0, packBuffer(">H", [1 << (pin - 16)]))
             }
             else {
-                buf.write(2, pins.packBuffer(">H", [1 << pin]))
+                buf.write(2, packBuffer(">H", [1 << pin]))
             }
             return buf
         }
