@@ -49,6 +49,7 @@ MIT
 * for PXT/adafruit https://makecode.adafruit.com
 * for PXT/maker https://maker.makecode.com
 * for PXT/microbit https://makecode.microbit.org
+* for PXT/arcade https://arcade.makecode.com
 * for PXT/codal
 
 (The metadata above is needed for package search.)
