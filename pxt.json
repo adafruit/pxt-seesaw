@@ -14,5 +14,5 @@
         "test.ts"
     ],
     "public": true,
-    "additionalFilePaths": []
+    "preferredEditor": "tsprj"
 }

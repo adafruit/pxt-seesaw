@@ -151,7 +151,7 @@ namespace seesaw {
         packUnpackCore(format, nums, buf, true, offset)
     }
 
-    function unpackBuffer(format: string, buf: Buffer, offset = 0) {
+    function unpackBuffer(format: string, buf: Buffer, offset = 0): number[] {
         let res: number[] = []
         packUnpackCore(format, res, buf, false, offset)
         return res
@@ -313,18 +313,18 @@ Implementation Notes
         }
         */
 
-        getPinArray(pin: number) : Buffer {
+        getPinArray(pin: number): Buffer {
             let buf = pins.createBuffer(8)
             pin = pin | 0;
-            if(pin > 63 || pin < 0)
+            if (pin > 63 || pin < 0)
                 fail("Invalid pin")
-            else if(pin >= 48){
+            else if (pin >= 48) {
                 buf.write(4, packBuffer(">H", [1 << (pin - 48)]))
             }
-            else if(pin >= 32){
+            else if (pin >= 32) {
                 buf.write(6, packBuffer(">H", [1 << (pin - 32)]))
             }
-            else if(pin >= 16){
+            else if (pin >= 16) {
                 buf.write(0, packBuffer(">H", [1 << (pin - 16)]))
             }
             else {
@@ -347,8 +347,8 @@ Implementation Notes
         public digitalRead(pin: number): boolean {
             let buf = this.getPinArray(pin)
             let readVals = this.digitalReadBulk(buf)
-            for(let i=0; i<8; i++){
-                if(readVals[i] > 0){
+            for (let i = 0; i < 8; i++) {
+                if (readVals[i] > 0) {
                     return true
                 }
             }
@@ -359,7 +359,7 @@ Implementation Notes
             let buf = pins.createBuffer(8)
             this.read(_GPIO_BASE, _GPIO_BULK, buf)
             let ret = [0, 0, 0, 0, 0, 0, 0, 0]
-            for(let i=1; i<8; i++){ //TODO: why are we not getting the first byte??
+            for (let i = 1; i < 8; i++) { //TODO: why are we not getting the first byte??
                 ret[i] = buf[i] & pinSet[i]
             }
             return ret
@@ -523,6 +523,27 @@ Implementation Notes
             this.write(_NEOPIXEL_BASE, _NEOPIXEL_BUF_LENGTH, packBuffer(">H", [buffer.length]));
             this.write(_NEOPIXEL_BASE, _NEOPIXEL_BUF, buffer);
             this.write(_NEOPIXEL_BASE, _NEOPIXEL_SHOW, pins.createBuffer(0));
+        }
+
+        public readMoisture(): number {
+            const buf = control.createBuffer(2);
+
+            this.read(_TOUCH_BASE, _TOUCH_CHANNEL_OFFSET, buf, .005)
+            let ret = unpackBuffer(">H", buf)[0]
+            pause(1)
+
+            // retry if reading was bad
+            let count = 0
+            while (ret > 4095) {
+                this.read(_TOUCH_BASE, _TOUCH_CHANNEL_OFFSET, buf, .005)
+                ret = unpackBuffer(">H", buf)[0]
+            }
+            pause(1)
+            count += 1
+            if (count > 3)
+                fail("Could not get a valid moisture reading.")
+            
+            return ret;
         }
     }
 }
