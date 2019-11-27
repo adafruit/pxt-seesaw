@@ -2,6 +2,62 @@
 // *** adafruit_seesaw/adafruit_seesaw/seesaw.py ***
 //
 
+enum ioConfig {
+    //%block="Output"
+    output = 1,
+    //%block="Input"
+    input = 0
+}
+
+enum digitalPins {
+    //%block="P9"
+    P9 = 9,
+    //%block="P10"
+    P10 = 10,
+    //%block="P11"
+    P11 = 11,
+    //%block="P14"
+    P14 = 14,
+    //%block="P15"
+    P15 = 15,
+    //%block="P24"
+    P24 = 24,
+    //%block="P25"
+    P25 = 25
+}
+
+enum analogPins {
+    //%block="P2"
+    P2 = 2,
+    //%block="P3"
+    P3 = 3,
+    //%block="P4"
+    P4 = 4,
+}
+
+enum pwmPins {
+    //%block="P4"
+    P4 = 4,
+    //%block="P5"
+    P5 = 5,
+    //%block="P6"
+    P6 = 6,
+    //%block="P7"
+    P7 = 7,
+}
+
+enum sAddr {
+    //%block=0x49
+    add1 = 0x49,
+    //%block=0x50
+    add2 = 0x50,
+    //%block=0x51
+    add3 = 0x51,
+    //%block=0x52
+    add4 = 0x52,
+}
+
+//% weight=5 color=#610000 icon="\uf125"
 namespace seesaw {
     // cross compat helper
     // these types do not exist in micro:bit v0 (yet)
@@ -184,7 +240,7 @@ namespace seesaw {
     // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     // THE SOFTWARE.
-    /** 
+    /**
 `seesaw`
 ====================================================
 
@@ -257,10 +313,19 @@ Implementation Notes
     const _HW_ID_CODE = 0x55
     const _EEPROM_I2C_ADDR = 0x3F
 
+    const ADC_INPUT_0_PIN = 2
+    const ADC_INPUT_1_PIN = 3
+    const ADC_INPUT_2_PIN = 4
+
+    const PWM_0_PIN = 4
+    const PWM_1_PIN = 5
+    const PWM_2_PIN = 6
+    const PWM_3_PIN = 7
+
     export class SeesawPinmap {
-        analogPins: number[]
-        pwmWidth: number
-        pwmPins: number[]
+        //  analogPins: number[]
+        //  pwmWidth: number
+        //  pwmPins: number[]
         touchPins: number[]
     }
 
@@ -268,6 +333,7 @@ Implementation Notes
         private i2c_device: I2CDevice;
         private _waitForPin: () => void;
         pinMapping: SeesawPinmap;
+
         /** Driver for Seesaw i2c generic conversion trip
 
        :param ~busio.I2C i2c_bus: Bus the SeeSaw is connected to
@@ -333,20 +399,36 @@ Implementation Notes
             return buf
         }
 
-        public pinMode(pin: number, mode: number) {
-            mode = mode | 0;
+        // public pinMode(pin: number, mode: number) {
+        //     mode = mode | 0;
+        //     let buf = this.getPinArray(pin)
+        //     this.pinModeBulk(buf, mode)
+        // }
+
+
+        /**
+         * Set the pin value to either 1 (high) or 0 (low)
+        */
+        //%block
+        //% blockId="seesaw_digitalWrite" block="%SeeSaw| digital write pin %pin | to %value"
+        //% value.min=0 value.max=1
+        //% weight=80 blockGap=8
+        public digitalWrite(pin: digitalPins, value: number) {
             let buf = this.getPinArray(pin)
-            this.pinModeBulk(buf, mode)
+            this.pinModeBulk(buf, ioConfig.output)
+            this.dWriteBulk(buf, value)
         }
 
-        public digitalWrite(pin: number, value: boolean) {
+        /**
+         * Read the pin either true (high) or false (low)
+         */
+        //%block
+        //% blockId="seesaw_digitalRead" block="%SeeSaw| digital read pin %pin"
+        //% weight=60 blockGap=8
+        public digitalRead(pin: digitalPins): boolean {
             let buf = this.getPinArray(pin)
-            this.digitalWriteBulk(buf, value)
-        }
-
-        public digitalRead(pin: number): boolean {
-            let buf = this.getPinArray(pin)
-            let readVals = this.digitalReadBulk(buf)
+            this.pinModeBulk(buf, ioConfig.input)
+            let readVals = this.dReadBulk(buf)
             for (let i = 0; i < 8; i++) {
                 if (readVals[i] > 0) {
                     return true
@@ -355,11 +437,30 @@ Implementation Notes
             return false
         }
 
-        public digitalReadBulk(pinSet: Buffer): number[] {
+        /**
+         * Read the pins in decimal values
+         * Input: Convert binary into decimal
+         */
+        //%block
+        //% blockId="seesaw_digitalReadBulk" block="%SeeSaw| digital read bulk pinSet %pin"
+        //% weight=50 blockGap=8
+        public digitalReadBulk(pinSet: number): number {
+            let cmd = pins.createBuffer(4)
+            cmd[0] = pinSet >> 24
+            cmd[1] = pinSet >> 16
+            cmd[2] = pinSet >> 8
+            cmd[3] = pinSet
+            this.pinModeBulk(cmd, ioConfig.input)
+            let data = this.dReadBulk(cmd)
+
+            data[2] = data[2] << 8
+            return data[2]
+        }
+        public dReadBulk(pinSet: Buffer): number[] {
             let buf = pins.createBuffer(8)
             this.read(_GPIO_BASE, _GPIO_BULK, buf)
             let ret = [0, 0, 0, 0, 0, 0, 0, 0]
-            for (let i = 1; i < 8; i++) { //TODO: why are we not getting the first byte??
+            for (let i = 0; i < 8; i++) {
                 ret[i] = buf[i] & pinSet[i]
             }
             return ret
@@ -377,14 +478,29 @@ Implementation Notes
         }
         */
 
-        public analogRead(pin: number): number {
-            let buf = pins.createBuffer(2)
-            if (this.pinMapping.analogPins.indexOf(pin) < 0) {
+
+        /**
+         * Read the pin as analog, from 0 to 1023
+         */
+        //%block
+        //% blockId="seesaw_analogRead" block="%SeeSaw| analog read pin %pin"
+        //% weight=40 blockGap=8
+        public analogRead(pin: analogPins): number {
+            let buf = this.getPinArray(pin)
+            this.pinModeBulk(buf, ioConfig.input)
+            let cmd = pins.createBuffer(2)
+            let p = 0
+            switch (pin) {
+                case ADC_INPUT_0_PIN: p = 0; break
+                case ADC_INPUT_1_PIN: p = 1; break
+                case ADC_INPUT_2_PIN: p = 2; break
+            }
+            if (p < 0) {
                 fail("Invalid ADC pin")
             }
 
-            this.read(_ADC_BASE, _ADC_CHANNEL_OFFSET + this.pinMapping.analogPins.indexOf(pin), buf)
-            let ret = unpackBuffer(">H", buf)[0]
+            this.read(_ADC_BASE, _ADC_CHANNEL_OFFSET + p, cmd)
+            let ret = unpackBuffer(">H", cmd)[0]
             pause(1)
             return ret
         }
@@ -416,30 +532,61 @@ Implementation Notes
             } else {
                 fail("Invalid pin mode")
             }
+            this.write(_GPIO_BASE, _GPIO_BULK_CLR, pinSet)
 
         }
 
-        public digitalWriteBulk(pinSet: Buffer, value: boolean) {
-            if (value) {
+        /**
+         * Set the pins to either 1 (high) or 0 (low)
+         * Input: Convert binary into decimal
+         */
+        //%block
+        //% blockId="seesaw_digitalWriteBulk" block="%SeeSaw| digital write bulk pinset %pin| to %value"
+        //% value.min=0  value.max=1
+        //% weight=70 blockGap=8
+        public digitalWriteBulk(pinSet: number, value: number) {
+            let cmd = pins.createBuffer(4)
+            cmd[0] = pinSet >> 24
+            cmd[1] = pinSet >> 16
+            cmd[2] = pinSet >> 8
+            cmd[3] = pinSet
+            this.pinModeBulk(cmd, ioConfig.output)
+            this.dWriteBulk(cmd, value)
+        }
+
+        public dWriteBulk(pinSet: Buffer, value: number) {
+            if (value == 1) {
                 this.write(_GPIO_BASE, _GPIO_BULK_SET, pinSet)
             } else {
                 this.write(_GPIO_BASE, _GPIO_BULK_CLR, pinSet)
             }
 
         }
-        public analogWrite(pin: number, value: number) {
+
+
+        /**
+         * Set the pin value in analog, from 0 to 65535
+         */
+        //%block
+        //% blockId="seesaw_analogWrite" block="%SeeSaw| analog write pin %pin| to %value"
+        //% value.min=0  value.max=65535
+        //% weight=30 blockGap=8
+        public analogWrite(pin: pwmPins, value: number) {
+            let buf = this.getPinArray(pin)
+            this.pinModeBulk(buf, ioConfig.output)
             let pin_found = false
             let cmd = pins.createBuffer(3)
+            let p = -1
+            switch (pin) {
+                case PWM_0_PIN: p = 0; break
+                case PWM_1_PIN: p = 1; break
+                case PWM_2_PIN: p = 2; break
+                case PWM_3_PIN: p = 3; break
+            }
 
-            if (this.pinMapping.pwmWidth == 16) {
-                if (this.pinMapping.pwmPins.indexOf(pin) >= 0) {
-                    pin_found = true
-                    cmd = createBufferFromArray([this.pinMapping.pwmPins.indexOf(pin), value >> 8, value])
-                }
-
-            } else if (this.pinMapping.pwmPins.indexOf(pin) >= 0) {
+            if (p >= 0) {
                 pin_found = true
-                cmd = createBufferFromArray([this.pinMapping.pwmPins.indexOf(pin), value])
+                cmd = createBufferFromArray([p, value >> 8, value])
             }
 
             if (pin_found === false) {
@@ -449,13 +596,23 @@ Implementation Notes
             this.write(_TIMER_BASE, _TIMER_PWM, cmd)
         }
 
-        public setPwmFreq(pin: number, freq: number) {
-            if (this.pinMapping.pwmPins.indexOf(pin) >= 0) {
-                let cmd = createBufferFromArray([this.pinMapping.pwmPins.indexOf(pin), freq >> 8, freq])
+        public setPwmFreq(pin: pwmPins, freq: number) {
+            let buf = this.getPinArray(pin)
+            this.pinModeBulk(buf, ioConfig.output)
+            let p = -1
+            switch (pin) {
+                case PWM_0_PIN: p = 0; break
+                case PWM_1_PIN: p = 1; break
+                case PWM_2_PIN: p = 2; break
+                case PWM_3_PIN: p = 3; break
+            }
+            if (p >= 0) {
+                let cmd = createBufferFromArray([p, freq >> 8, freq])
                 this.write(_TIMER_BASE, _TIMER_FREQ, cmd)
             } else {
                 fail("Invalid PWM pin")
             }
+
 
         }
 
@@ -542,8 +699,19 @@ Implementation Notes
             count += 1
             if (count > 3)
                 fail("Could not get a valid moisture reading.")
-            
+
             return ret;
         }
+    }
+    /**
+     * Create seesaw object with address (default: 0x49)
+     */
+    //%block
+    //% blockId="seesaw_create" block="create seesaw object with addr %addr"
+    //% weight=90 blockGap=8
+    //% blockSetVariable=SeeSaw
+    export function create(addr: sAddr): Seesaw {
+        let sDev = new seesaw.Seesaw(null, addr)
+        return sDev
     }
 }
