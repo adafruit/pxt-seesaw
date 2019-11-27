@@ -313,16 +313,19 @@ Implementation Notes
     const _HW_ID_CODE = 0x55
     const _EEPROM_I2C_ADDR = 0x3F
 
+    //ADC pins
     const ADC_INPUT_0_PIN = 2
     const ADC_INPUT_1_PIN = 3
     const ADC_INPUT_2_PIN = 4
 
+    //PWM pins
     const PWM_0_PIN = 4
     const PWM_1_PIN = 5
     const PWM_2_PIN = 6
     const PWM_3_PIN = 7
 
     export class SeesawPinmap {
+        /* Defined */
         //  analogPins: number[]
         //  pwmWidth: number
         //  pwmPins: number[]
@@ -415,7 +418,7 @@ Implementation Notes
         //% weight=80 blockGap=8
         public digitalWrite(pin: digitalPins, value: number) {
             let buf = this.getPinArray(pin)
-            this.pinModeBulk(buf, ioConfig.output)
+            this.pinModeBulk(buf, ioConfig.output) //Set pin mode
             this.dWriteBulk(buf, value)
         }
 
@@ -427,7 +430,7 @@ Implementation Notes
         //% weight=60 blockGap=8
         public digitalRead(pin: digitalPins): boolean {
             let buf = this.getPinArray(pin)
-            this.pinModeBulk(buf, ioConfig.input)
+            this.pinModeBulk(buf, ioConfig.input) //Set pin mode
             let readVals = this.dReadBulk(buf)
             for (let i = 0; i < 8; i++) {
                 if (readVals[i] > 0) {
@@ -450,7 +453,7 @@ Implementation Notes
             cmd[1] = pinSet >> 16
             cmd[2] = pinSet >> 8
             cmd[3] = pinSet
-            this.pinModeBulk(cmd, ioConfig.input)
+            this.pinModeBulk(cmd, ioConfig.input) //Set pin mode
             let data = this.dReadBulk(cmd)
 
             data[2] = data[2] << 8
@@ -487,7 +490,7 @@ Implementation Notes
         //% weight=40 blockGap=8
         public analogRead(pin: analogPins): number {
             let buf = this.getPinArray(pin)
-            this.pinModeBulk(buf, ioConfig.input)
+            this.pinModeBulk(buf, ioConfig.input) //Set pin mode
             let cmd = pins.createBuffer(2)
             let p = 0
             switch (pin) {
@@ -550,7 +553,7 @@ Implementation Notes
             cmd[1] = pinSet >> 16
             cmd[2] = pinSet >> 8
             cmd[3] = pinSet
-            this.pinModeBulk(cmd, ioConfig.output)
+            this.pinModeBulk(cmd, ioConfig.output) //Set pin mode
             this.dWriteBulk(cmd, value)
         }
 

@@ -1,10 +1,10 @@
 const dev = new seesaw.Seesaw(null)
-//dev.pinMode(15, 1)
+//dev.pinMode(15, 1) // Pin mode is set in digitalWrite() function
 
 // blinky
 for (let i = 0; i < 10; ++i) {
     dev.digitalWrite(15, 1)
     basic.pause(500)
     dev.digitalWrite(15, 0)
-    basic.pause(500)    
+    basic.pause(500)
 }
